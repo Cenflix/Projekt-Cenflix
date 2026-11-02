@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Login</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: system-ui, sans-serif; }
+  body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #1e1e2f, #2d2d44);
+  }
+  .card {
+    background: #fff;
+    width: 100%;
+    max-width: 380px;
+    padding: 2.5rem;
+    border-radius: 12px;
+    box-shadow: 0 15px 40px rgba(0,0,0,.35);
+  }
+  h1 { font-size: 1.5rem; margin-bottom: .4rem; }
+  .subtitle { color: #666; font-size: .9rem; margin-bottom: 1.5rem; }
+  .tabs { display: flex; margin-bottom: 1.5rem; border-radius: 8px; overflow: hidden; background: #eee; }
+  .tabs button {
+    flex: 1;
+    padding: .6rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: .95rem;
+    color: #555;
+  }
+  .tabs button.active { background: #4f46e5; color: #fff; }
+  label { display: block; font-size: .85rem; margin: .8rem 0 .3rem; color: #444; }
+  input {
+    width: 100%;
+    padding: .65rem .75rem;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    font-size: 1rem;
+  }
+  input:focus { outline: none; border-color: #4f46e5; }
+  button[type=submit] {
+    width: 100%;
+    margin-top: 1.5rem;
+    padding: .75rem;
+    border: none;
+    border-radius: 8px;
+    background: #4f46e5;
+    color: #fff;
+    font-size: 1rem;
+    cursor: pointer;
+  }
+  button[type=submit]:hover { background: #4338ca; }
+  .error {
+    margin-top: 1rem;
+    padding: .6rem;
+    background: #fee2e2;
+    color: #b91c1c;
+    border-radius: 8px;
+    font-size: .85rem;
+    display: none;
+  }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1 id="title">Welcome back</h1>
+    <p class="subtitle" id="subtitle">Log in to your account</p>
+
+    <div class="tabs">
+      <button id="tab-login" class="active" onclick="showForm('login')">Login</button>
+      <button id="tab-register" onclick="showForm('register')">Register</button>
+    </div>
+
+    <!-- Login form: posts to your existing /login route -->
+    <form id="form-login" method="POST" action="/login" onsubmit="return handleError(this)">
+      <label for="login-email">Email</label>
+      <input id="login-email" name="email" type="email" required autocomplete="email">
+      <label for="login-password">Password</label>
+      <input id="login-password" name="password" type="password" required autocomplete="current-password">
+      <button type="submit">Login</button>
+      <div class="error" id="error-login"></div>
+    </form>
+
+    <!-- Register form: posts to /register (needs a server route, see note) -->
+    <form id="form-register" method="POST" action="/register" class="hidden" onsubmit="return handleError(this)">
+      <label for="reg-email">Email</label>
+      <input id="reg-email" name="email" type="email" required autocomplete="email">
+      <label for="reg-password">Password</label>
+      <input id="reg-password" name="password" type="password" minlength="4" required autocomplete="new-password">
+      <label for="reg-confirm">Confirm password</label>
+      <input id="reg-confirm" type="password" minlength="4" required autocomplete="new-password"
+             oninput="checkMatch()">
+      <button type="submit">Create account</button>
+      <div class="error" id="error-register"></div>
+    </form>
+  </div>
+
+<script>
+  function showForm(which) {
+    const login = which === 'login';
+    document.getElementById('form-login').classList.toggle('hidden', !login);
+    document.getElementById('form-register').classList.toggle('hidden', login);
+    document.getElementById('tab-login').classList.toggle('active', login);
+    document.getElementById('tab-register').classList.toggle('active', !login);
+    document.getElementById('title').textContent = login ? 'Welcome back' : 'Create account';
+    document.getElementById('subtitle').textContent =
+      login ? 'Log in to your account' : 'Sign up in seconds';
+  }
+
+  function checkMatch() {
+    const p = document.getElementById('reg-password');
+    const c = document.getElementById('reg-confirm');
+    c.setCustomValidity(c.value !== p.value ? 'Passwords do not match' : '');
+  }
+
+  // Show server error messages (e.g. "Wrong email or password.") instead of navigating away
+  function handleError(form) {
+    const errBox = form.querySelector('.error');
+    fetch(form.action, {
+      method: 'POST',
+      body: new URLSearchParams(new FormData(form)),
+      redirect: 'manual'
+    })
+    .then(res => {
+      if (res.type === 'opaqueredirect' || res.status === 0) {
+        window.location.href = '/dashboard'; // success redirect
+        return;
+      }
+      return res.text().then(text => {
+        errBox.textContent = text || 'Something went wrong.';
+        errBox.style.display = 'block';
+      });
+    })
+    .catch(() => {
+      errBox.textContent = 'Network error. Please try again.';
+      errBox.style.display = 'block';
+    });
+    return false;
+  }
+</script>
+</body>
+</html>
