@@ -194,12 +194,23 @@ def aktualizuj_tmdb(db, cfg, klucz):
         ORDER BY (t.serial_id IS NOT NULL), IFNULL(s.popularnosc, 999999)
         LIMIT ?""", (granica, cfg["tmdb_max_seriali_na_uruchomienie"])).fetchall()
     log(f"TMDB: do pobrania {len(wiersze)} seriali")
-    zrobione = 0
+    zrobione = bledy = 0
     for i, r in enumerate(wiersze, 1):
         nr = r["tmdb_id"].split("/", 1)[1]
         sezony = max(1, min(r["sezony"] or 1, 19))
-        d = tmdb.get(f"/tv/{nr}", {"append_to_response": "watch/providers," +
-                                   ",".join(f"season/{n}" for n in range(1, sezony + 1))})
+        try:
+            d = tmdb.get(f"/tv/{nr}", {"append_to_response": "watch/providers," +
+                                       ",".join(f"season/{n}" for n in range(1, sezony + 1))})
+        except BladKlucza:
+            raise
+        except Exception as e:      # jedna dziwna odpowiedź nie przerywa całości
+            bledy += 1
+            log(f"   TMDB: pominięto {r['tmdb_id']} ({type(e).__name__}: {e})")
+            if bledy >= 10:
+                log("   TMDB: zbyt wiele błędów z rzędu – przerywam, reszta przy następnym uruchomieniu")
+                break
+            continue
+        bledy = 0
         if d is None:
             db.execute("INSERT OR REPLACE INTO tmdb(serial_id, pobrano, sezony_przy_pobraniu) VALUES(?,?,?)",
                        (r["id"], teraz(), r["sezony"]))

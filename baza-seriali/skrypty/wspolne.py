@@ -1,7 +1,9 @@
 """Wspólne elementy: konfiguracja, baza SQLite, klienci API z limitem zapytań."""
 
+import gzip
 import json
 import os
+import zlib
 import sqlite3
 import sys
 import time
@@ -30,6 +32,17 @@ def miesiac():
 
 def log(*a):
     print(*a, flush=True)
+
+
+def odczytaj_json(odpowiedz):
+    """Czyta odpowiedź HTTP jako JSON, rozpakowując ją, jeśli serwer wysłał gzip/deflate."""
+    surowe = odpowiedz.read()
+    kodowanie = (odpowiedz.headers.get("Content-Encoding") or "").lower()
+    if surowe[:2] == b"\x1f\x8b" or kodowanie == "gzip":
+        surowe = gzip.decompress(surowe)
+    elif kodowanie == "deflate":
+        surowe = zlib.decompress(surowe)
+    return json.loads(surowe.decode("utf-8"))
 
 
 def wczytaj_konfiguracje():
@@ -186,7 +199,7 @@ class StreamingAvailability:
         for proba in range(5):
             try:
                 with urllib.request.urlopen(req, timeout=60) as r:
-                    dane = json.loads(r.read().decode("utf-8"))
+                    dane = odczytaj_json(r)
                 self._policz()
                 return dane
             except urllib.error.HTTPError as e:
@@ -237,7 +250,7 @@ class TMDB:
                 with urllib.request.urlopen(urllib.request.Request(url, headers=naglowki), timeout=30) as r:
                     self.zapytania += 1
                     time.sleep(0.03)
-                    return json.loads(r.read().decode("utf-8"))
+                    return odczytaj_json(r)
             except urllib.error.HTTPError as e:
                 if e.code == 404:
                     return None
@@ -249,7 +262,8 @@ class TMDB:
                 raise RuntimeError(f"Błąd TMDB HTTP {e.code} dla {sciezka}")
             except urllib.error.URLError:
                 time.sleep(3 * (proba + 1))
-        return None
+        # Nie zwracamy None (to znaczyłoby „serial nie istnieje w TMDB”) – serial zostanie spróbowany ponownie.
+        raise RuntimeError(f"TMDB nie odpowiada dla {sciezka}")
 
 
 # --------------------------------------------------------------------------
