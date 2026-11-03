@@ -1,0 +1,74 @@
+name: Aktualizacja bazy seriali
+
+on:
+  schedule:
+    - cron: "17 4 */2 * *"        # co 2 dni o 4:17 UTC (ok. 5:17–6:17 w Polsce)
+  workflow_dispatch:               # przycisk „Run workflow” w zakładce Actions
+    inputs:
+      tryb:
+        description: "Tryb aktualizacji"
+        type: choice
+        default: auto
+        options: [auto, zmiany, pelne, tmdb, tylko_strona]
+
+permissions:
+  contents: write                  # potrzebne do podmiany plików w Releases
+
+concurrency:
+  group: aktualizacja-seriali
+  cancel-in-progress: false
+
+env:
+  FOLDER: baza-seriali             # folder z projektem bazy w repozytorium
+  TAG: dane-seriali                # nazwa wydania w Releases z bazą i stroną
+
+jobs:
+  aktualizuj:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    defaults:
+      run:
+        working-directory: ${{ env.FOLDER }}
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Pobierz aktualną bazę z Releases
+        run: |
+          if gh release view "$TAG" >/dev/null 2>&1; then
+            gh release download "$TAG" -p seriale.db --clobber || echo "Brak bazy – zaczynamy od zera."
+          else
+            echo "Brak wydania '$TAG' – zostanie utworzone."
+          fi
+
+      - name: Aktualizuj bazę
+        if: ${{ inputs.tryb != 'tylko_strona' }}
+        env:
+          SA_API_KEY: ${{ secrets.SA_API_KEY }}
+          TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
+          TRYB: ${{ inputs.tryb || 'auto' }}
+        run: python skrypty/aktualizuj.py
+
+      - name: Wygeneruj stronę
+        if: ${{ always() && hashFiles(format('{0}/seriale.db', env.FOLDER)) != '' }}
+        run: python skrypty/generuj_strone.py
+
+      - name: Wyślij bazę i stronę do Releases
+        if: ${{ always() && hashFiles(format('{0}/seriale.db', env.FOLDER)) != '' }}
+        run: |
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --title "Baza seriali i strona" \
+              --notes "Plik seriale.html to strona do pobrania. Plik seriale.db to baza danych. Oba są podmieniane przy każdej aktualizacji."
+          fi
+          gh release upload "$TAG" seriale.db seriale.html --clobber
+          # kopia zapasowa bazy raz w miesiącu
+          KOPIA="kopia-$(date -u +%Y-%m).db"
+          if ! gh release view "$TAG" --json assets -q '.assets[].name' | grep -qx "$KOPIA"; then
+            cp seriale.db "$KOPIA" && gh release upload "$TAG" "$KOPIA"
+          fi
+          gh release edit "$TAG" --notes "Ostatnia aktualizacja: $(date -u '+%Y-%m-%d %H:%M UTC'). Plik **seriale.html** to strona do pobrania (otwórz w przeglądarce). Plik seriale.db to baza danych SQLite. Pliki kopia-RRRR-MM.db to comiesięczne kopie zapasowe."
