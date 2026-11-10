@@ -7,7 +7,7 @@
 /* Layout: makieta Cenflix — wąska kolumna 1280px, panel preferencji po lewej, wynik + plan + oferty po prawej */
 :root{
   --bg:#F3F4F6; --surface:#FFFFFF; --ink:#14161B; --muted:#5B6170; --line:#E2E4E9; --line2:#D6D9E0;
-  --accent:#2446D8; --accent-ink:#1A33A3; --accent-soft:#E8EDFD; --on-accent:#FFFFFF;
+  --accent:#ec9027; --accent-ink:#ec9027; --accent-soft:#E8EDFD; --on-accent:#FFFFFF;
   --hero:#14161B; --hero-ink:#FFFFFF; --hero-muted:#C9CEDA; --hero-line:#2E3445; --hero-line2:#4A5163;
   --ok:#1E6B3D; --ok-soft:#E5F3EA; --warn:#6E4E00; --warn-line:#8A6100; --warn-soft:#FFF4D6;
   --alert:#B4470A; --alert-ink:#6B2A05; --alert-soft:#FFF1E6; --alert-btn:#8A3507;
@@ -19,7 +19,7 @@
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#0F1115; --surface:#181B22; --ink:#ECEEF2; --muted:#9AA1B0; --line:#262B35; --line2:#343A47;
-  --accent:#7189FF; --accent-ink:#AFBEFF; --accent-soft:#1C2550; --on-accent:#0F1115;
+  --accent:#ffbd71; --accent-ink:#AFBEFF; --accent-soft:#c46e0d; --on-accent:#0F1115;
   --hero:#1F2431; --hero-ink:#FFFFFF; --hero-muted:#B9BFCC; --hero-line:#323949; --hero-line2:#4A5163;
   --ok:#7DD3A0; --ok-soft:#163024; --warn:#E9C46A; --warn-line:#B48A2A; --warn-soft:#352B10;
   --alert:#F29A62; --alert-ink:#F7C6A6; --alert-soft:#3A2312; --alert-btn:#F7C6A6;
@@ -27,7 +27,7 @@
   --shadow:0 16px 32px rgba(0,0,0,.4); color-scheme:dark }}
 :root[data-theme="dark"]{
   --bg:#0F1115; --surface:#181B22; --ink:#ECEEF2; --muted:#9AA1B0; --line:#262B35; --line2:#343A47;
-  --accent:#7189FF; --accent-ink:#AFBEFF; --accent-soft:#1C2550; --on-accent:#0F1115;
+  --accent:#ffbd71; --accent-ink:#AFBEFF; --accent-soft:#c46e0d; --on-accent:#0F1115;
   --hero:#1F2431; --hero-ink:#FFFFFF; --hero-muted:#B9BFCC; --hero-line:#323949; --hero-line2:#4A5163;
   --ok:#7DD3A0; --ok-soft:#163024; --warn:#E9C46A; --warn-line:#B48A2A; --warn-soft:#352B10;
   --alert:#F29A62; --alert-ink:#F7C6A6; --alert-soft:#3A2312; --alert-btn:#F7C6A6;
@@ -159,7 +159,7 @@ legend{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6
 
 .hero{background:var(--hero);color:var(--hero-ink);border-radius:20px;padding:28px;display:flex;flex-direction:column;gap:18px}
 .hero .badges{display:flex;flex-wrap:wrap;gap:8px;align-items:center;font-size:13px}
-.hero .b1{padding:4px 10px;border-radius:999px;background:#2446D8;color:#fff;font-weight:600}
+.hero .b1{padding:4px 10px;border-radius:999px;background:#ec9027;color:#fff;font-weight:600}
 .hero .b2{padding:4px 10px;border-radius:999px;border:1px solid var(--hero-line2);color:var(--hero-muted)}
 .hero .crit{color:var(--hero-muted)}
 .hero .row{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:20px}
@@ -217,7 +217,7 @@ legend{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.6
 .offer .pf{font-weight:700;font-size:16px}
 .offer .pn{font-size:14px;color:var(--muted)}
 .badge{padding:2px 8px;border-radius:999px;font-size:12px;font-weight:600;color:#fff}
-.badge.best{background:#2446D8}.badge.own{background:#1E6B3D}
+.badge.best{background:#ec9027}.badge.own{background:#1E6B3D}
 .offer .c2{flex:2 1 280px;display:flex;flex-direction:column;gap:8px;font-size:14px;min-width:0}
 .offer .c3{flex:1 1 190px;display:flex;flex-direction:column;align-items:flex-end;gap:6px;text-align:right}
 .offer .tot{font-family:var(--f-display);font-size:30px;font-weight:700;line-height:1}
@@ -238,6 +238,7 @@ details.non summary{cursor:pointer;font-weight:600;min-height:44px;display:flex;
 .non-row{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;padding:12px 0;border-top:1px solid var(--line);font-size:14px}
 .non-row .why{color:var(--alert-btn)}
 footer.foot{border-top:1px solid var(--line);padding-top:18px;display:flex;flex-wrap:wrap;gap:8px 24px;font-size:12px;color:var(--muted)}
+
 
 @media (max-width:860px){
   .method{grid-template-columns:minmax(0,1fr)}
@@ -268,7 +269,7 @@ const D = window.CENFLIX_DATA;
 /* ================= Stałe i narzędzia ================= */
 const SVC = [
   { name: 'Netflix', ini: 'N', color: '#B1060F' },
-  { name: 'HBO Max', ini: 'M', color: '#4B2BB5' },
+  { name: 'HBO Max', ini: 'HBO', color: '#4B2BB5' },
   { name: 'Disney+', ini: 'D', color: '#103A8E' }
 ];
 const QL = ['SD', 'HD', 'Full HD', '4K'];
