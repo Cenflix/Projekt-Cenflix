@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="pl">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#f3f4f6">
+    <meta name="description" content="Znajdź serial i sprawdź, na jakich platformach streamingowych jest dostępny.">
+    <title>Cenflix — gdzie obejrzeć serial?</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/styles.css">
+    <script src="/app.js" defer></script>
+  </head>
+  <body>
+    <div class="page">
+      <header class="site-header">
+        <a class="logo" href="/" aria-label="Cenflix — strona główna">Cen<span>flix</span></a>
+        <nav class="main-nav" aria-label="Główna nawigacja">
+          <a href="#katalog">Katalog</a>
+          <a href="#jak-liczymy">Jak liczymy?</a>
+          <span class="region">PL · PLN</span>
+        </nav>
+      </header>
+
+      <main class="main-content">
+        <section class="hero" aria-labelledby="hero-title">
+          <h1 id="hero-title">Gdzie i za ile najtaniej obejrzysz ten serial?</h1>
+          <p class="lead">Nie porównujemy cenników. Chcemy pokazać, ile kosztuje obejrzenie całego serialu — w Twoim tempie, jakości i wersji językowej.</p>
+
+          <div class="search-wrap">
+            <label class="search-box" for="series-search">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7"></circle>
+                <path d="m20 20-4-4"></path>
+              </svg>
+              <span class="visually-hidden">Tytuł serialu</span>
+              <input id="series-search" type="search" placeholder="Wpisz tytuł polski lub oryginalny" autocomplete="off" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="suggestions">
+            </label>
+            <div id="suggestions" class="suggestions" role="listbox" aria-label="Podpowiedzi" hidden></div>
+            <p id="search-status" class="search-status" aria-live="polite"></p>
+          </div>
+          <p class="hero-note">Bez zakładania konta. Wyszukaj serial i zobacz, gdzie jest dostępny.</p>
+        </section>
+
+        <section id="jak-liczymy" class="steps" aria-label="Jak działa Cenflix">
+          <article class="step">
+            <span class="step-number">1</span>
+            <strong>Wybierz serial</strong>
+            <span>Wyszukaj tytuł polski lub oryginalny i sprawdź jego dostępność.</span>
+          </article>
+          <article class="step">
+            <span class="step-number">2</span>
+            <strong>Powiedz, jak oglądasz</strong>
+            <span>Wybierz tempo, wersję językową i jakość dopasowaną do siebie.</span>
+          </article>
+          <article class="step">
+            <span class="step-number">3</span>
+            <strong>Zobacz plan i cenę finalną</strong>
+            <span>Porównamy cykle subskrypcji i koszt obejrzenia wybranego zakresu.</span>
+          </article>
+        </section>
+
+        <section id="wybrany-serial" class="selected-series" aria-live="polite" hidden></section>
+
+        <section id="katalog" class="catalog" aria-labelledby="catalog-title">
+          <div class="catalog-heading">
+            <div>
+              <h2 id="catalog-title">Popularne seriale</h2>
+              <p class="catalog-description">Katalog dostępności seriali na platformach.</p>
+            </div>
+            <div class="catalog-filters">
+              <div class="sort-tabs" role="group" aria-label="Sortowanie katalogu">
+                <button class="filter-chip is-active" type="button" data-sort="popular" aria-pressed="true">Popularne</button>
+                <button class="filter-chip" type="button" data-sort="new" aria-pressed="false">Nowości</button>
+              </div>
+              <label class="visually-hidden" for="genre-filter">Filtruj po gatunku</label>
+              <select id="genre-filter" class="filter-select">
+                <option value="">Gatunek</option>
+              </select>
+              <label class="visually-hidden" for="platform-filter">Filtruj po platformie</label>
+              <select id="platform-filter" class="filter-select">
+                <option value="">Platforma</option>
+              </select>
+            </div>
+          </div>
+          <p id="catalog-status" class="catalog-status" aria-live="polite"></p>
+          <div id="series-grid" class="series-grid"></div>
+          <p class="data-note">Dostępność i dane katalogowe mają charakter informacyjny. Ceny i wyliczenia kosztu będą dostępne po podłączeniu danych o planach subskrypcji.</p>
+        </section>
+      </main>
+
+      <footer class="footer">
+        <span>Cenflix — porównywarka kosztu oglądania seriali</span>
+        <span>Polska · PLN</span>
+      </footer>
+    </div>
+  </body>
+</html>

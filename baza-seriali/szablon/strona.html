@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Seriale w serwisach</title>
+<style>
+:root{
+  --bg:#f6f5f2; --panel:#ffffff; --ink:#1b1b1f; --muted:#62626b; --line:#e3e1dc;
+  --accent:#d1462f; --accent-ink:#ffffff; --chip:#efede8; --ok:#1f7a4d; --warn:#a15c00;
+  --shadow:0 1px 2px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121215; --panel:#1b1b20; --ink:#ededf0; --muted:#a0a0aa; --line:#2c2c33;
+    --accent:#ff6a4d; --accent-ink:#111; --chip:#26262d; --ok:#4cc38a; --warn:#f0a646;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 4px 16px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121215; --panel:#1b1b20; --ink:#ededf0; --muted:#a0a0aa; --line:#2c2c33;
+  --accent:#ff6a4d; --accent-ink:#111; --chip:#26262d; --ok:#4cc38a; --warn:#f0a646;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 4px 16px rgba(0,0,0,.3);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+a{color:inherit}
+button,input,select{font:inherit;color:inherit}
+.wrap{max-width:1240px;margin:0 auto;padding:0 16px}
+header{padding:22px 0 10px}
+.top{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap}
+h1{font-size:26px;line-height:1.1;margin:0;letter-spacing:-.02em}
+h1 span{color:var(--accent)}
+.sub{color:var(--muted);font-size:13px;margin-top:6px}
+.tabs{display:flex;gap:4px;margin-top:18px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tab{background:none;border:0;padding:10px 14px;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+.tab .n{font-size:12px;background:var(--chip);border-radius:10px;padding:1px 7px;margin-left:6px;color:var(--muted)}
+.filters{position:sticky;top:0;z-index:5;background:var(--bg);padding:12px 0;border-bottom:1px solid var(--line)}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.row+.row{margin-top:8px}
+.search{flex:1 1 260px;min-width:0;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+select{padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel);max-width:100%}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:6px 11px;border:1px solid var(--line);border-radius:999px;background:var(--panel);cursor:pointer;font-size:13.5px;user-select:none}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.dot{width:9px;height:9px;border-radius:50%;flex:none;display:inline-block}
+.count{color:var(--muted);font-size:13px;margin-left:auto}
+.theme{background:none;border:1px solid var(--line);border-radius:10px;padding:7px 10px;cursor:pointer}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:14px;padding:16px 0}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;box-shadow:var(--shadow);text-align:left;padding:0}
+.card:hover{border-color:var(--muted)}
+.card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.poster{aspect-ratio:2/3;background:var(--chip);position:relative;display:flex;align-items:center;justify-content:center;color:var(--muted);font-weight:700;font-size:28px;overflow:hidden}
+.poster img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.badges{position:absolute;left:6px;top:6px;display:flex;gap:4px;flex-wrap:wrap}
+.b{font-size:11px;font-weight:700;padding:2px 6px;border-radius:6px;background:rgba(0,0,0,.72);color:#fff;letter-spacing:.02em}
+.b.pl{background:#c8102e}
+.body{padding:10px 11px 12px;display:flex;flex-direction:column;gap:5px;flex:1}
+.title{font-weight:650;font-size:14.5px;line-height:1.25}
+.meta{color:var(--muted);font-size:12.5px}
+.svc{display:flex;gap:4px;flex-wrap:wrap;margin-top:auto;padding-top:4px}
+.svc span{font-size:11.5px;padding:2px 7px;border-radius:6px;color:#fff;font-weight:600}
+.more{display:block;margin:6px auto 30px;padding:10px 18px;border-radius:10px;border:1px solid var(--line);background:var(--panel);cursor:pointer}
+.empty{padding:40px 0;text-align:center;color:var(--muted)}
+.list{padding:12px 0 30px}
+.day{font-weight:650;margin:18px 0 6px;font-size:14px;color:var(--muted)}
+.ev{display:flex;gap:10px;align-items:center;padding:8px 10px;background:var(--panel);border:1px solid var(--line);border-radius:10px;margin-bottom:6px;cursor:pointer}
+.ev .tag{font-size:11.5px;font-weight:700;padding:2px 7px;border-radius:6px;white-space:nowrap}
+.tag.add{background:color-mix(in srgb,var(--ok) 18%,transparent);color:var(--ok)}
+.tag.del{background:color-mix(in srgb,var(--accent) 18%,transparent);color:var(--accent)}
+.tag.chg{background:var(--chip);color:var(--muted)}
+.tag.soon{background:color-mix(in srgb,var(--warn) 18%,transparent);color:var(--warn)}
+.ev .t{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.ev .x{color:var(--muted);font-size:13px;margin-left:auto;text-align:right}
+dialog{border:0;border-radius:16px;padding:0;max-width:820px;width:calc(100% - 24px);background:var(--panel);color:var(--ink);box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+.dlg{display:grid;grid-template-columns:200px 1fr;gap:20px;padding:20px}
+.dlg .poster{border-radius:10px}
+.close{position:absolute;right:10px;top:10px;border:0;background:var(--chip);border-radius:50%;width:34px;height:34px;cursor:pointer;font-size:18px}
+.dlg h2{margin:0 36px 4px 0;font-size:22px;line-height:1.2}
+.facts{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
+.facts span{background:var(--chip);border-radius:8px;padding:3px 9px;font-size:13px}
+.ov{color:var(--muted);margin:8px 0 0}
+.sec{margin-top:18px}
+.sec h3{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:0 0 8px}
+.opt{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:8px}
+.opt .hd{display:flex;align-items:center;gap:8px;font-weight:650}
+.opt .hd a{margin-left:auto;font-weight:500;font-size:13px;color:var(--accent)}
+.kv{display:grid;grid-template-columns:120px 1fr;gap:4px 10px;font-size:13.5px;margin-top:8px}
+.kv b{color:var(--muted);font-weight:500}
+.pl{font-weight:700}
+.world .p{display:flex;gap:10px;padding:6px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.world .p b{min-width:140px}
+.world .p span{color:var(--muted)}
+details summary{cursor:pointer;color:var(--accent);font-size:13.5px;margin-top:6px}
+footer{border-top:1px solid var(--line);padding:18px 0 40px;color:var(--muted);font-size:12.5px}
+footer p{margin:4px 0}
+@media (max-width:640px){
+  .dlg{grid-template-columns:1fr;padding:16px}
+  .dlg .poster{max-width:160px}
+  .grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+  .kv{grid-template-columns:96px 1fr}
+  .world .p{flex-direction:column;gap:2px}
+  .count{margin-left:0;width:100%}
+}
+</style>
+</head>
+<body>
+<header class="wrap">
+  <div class="top">
+    <div>
+      <h1>Seriale <span>w serwisach</span></h1>
+      <div class="sub" id="sub"></div>
+    </div>
+    <button class="theme" id="theme" title="Zmień motyw">◐ Motyw</button>
+  </div>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" data-tab="katalog" aria-selected="true">Katalog</button>
+    <button class="tab" role="tab" data-tab="nowosci" aria-selected="false">Nowości i zmiany<span class="n" id="n-now"></span></button>
+    <button class="tab" role="tab" data-tab="zapowiedzi" aria-selected="false">Wkrótce<span class="n" id="n-zap"></span></button>
+  </div>
+</header>
+
+<section class="filters" id="filters">
+  <div class="wrap">
+    <div class="row">
+      <input class="search" id="q" type="search" placeholder="Szukaj tytułu, twórcy, aktora…" autocomplete="off">
+      <select id="genre"><option value="">Wszystkie gatunki</option></select>
+      <select id="sort">
+        <option value="pop">Najpopularniejsze</option>
+        <option value="rating">Najwyżej oceniane</option>
+        <option value="new">Najnowsze</option>
+        <option value="az">Tytuł A–Z</option>
+        <option value="added">Ostatnio dodane</option>
+      </select>
+    </div>
+    <div class="row" id="svc-row"></div>
+    <div class="row">
+      <span class="chip" role="button" tabindex="0" aria-pressed="false" data-f="plAudio">Polskie audio</span>
+      <span class="chip" role="button" tabindex="0" aria-pressed="false" data-f="plSubs">Polskie napisy</span>
+      <span class="chip" role="button" tabindex="0" aria-pressed="false" data-f="uhd">4K</span>
+      <span class="chip" role="button" tabindex="0" aria-pressed="false" data-f="multi">Na kilku serwisach</span>
+      <span class="chip" role="button" tabindex="0" aria-pressed="false" data-f="leaving">Wkrótce znika</span>
+      <span class="count" id="count"></span>
+    </div>
+  </div>
+</section>
+
+<main class="wrap">
+  <div id="view-katalog"><div class="grid" id="grid"></div><button class="more" id="more" hidden>Pokaż więcej</button></div>
+  <div id="view-nowosci" class="list" hidden></div>
+  <div id="view-zapowiedzi" class="list" hidden></div>
+</main>
+
+<dialog id="dlg"></dialog>
+
+<footer class="wrap">
+  <p>Informacje o dostępności, jakości, audio i napisach: <a href="https://www.movieofthenight.com/about/api" target="_blank" rel="noopener">Streaming Availability API by Movie of the Night</a>.</p>
+  <p>Długości odcinków, polskie opisy i dostępność na świecie: <a href="https://www.themoviedb.org/" target="_blank" rel="noopener">TMDB</a>. This product uses the TMDB API but is not endorsed or certified by TMDB. Dane o dostępności na świecie dostarcza <a href="https://www.justwatch.com/" target="_blank" rel="noopener">JustWatch</a>.</p>
+  <p>Ścieżka „polskie audio” może oznaczać dubbing albo lektora – źródła danych tego nie rozróżniają.</p>
+</footer>
+
+<script>
+const D = /*__DANE__*/null;
+(function(){
+"use strict";
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+// ---- motyw ----
+try { const t = localStorage.getItem("motyw"); if (t) document.documentElement.dataset.theme = t; } catch(e) {}
+$("#theme").onclick = () => {
+  const dark = matchMedia("(prefers-color-scheme: dark)").matches;
+  const cur = document.documentElement.dataset.theme || (dark ? "dark" : "light");
+  const next = cur === "dark" ? "light" : "dark";
+  document.documentElement.dataset.theme = next;
+  try { localStorage.setItem("motyw", next); } catch(e) {}
+};
+
+if (!D) {
+  $("#grid").innerHTML = '<div class="empty">To jest szablon bez danych. Otwórz plik <b>seriale.html</b> z zakładki Releases.</div>';
+  $("#filters").hidden = true;
+  return;
+}
+
+const SV = {}; const FALLBACK = ["#e50914","#5b2bd6","#113ccf","#00a8e1","#0b5cff","#555"];
+D.meta.serwisy.forEach((s,i) => SV[s.id] = {nazwa:s.nazwa, kolor:s.kolor || FALLBACK[i % FALLBACK.length]});
+const svName = id => (SV[id] || {nazwa:id}).nazwa;
+const svColor = id => (SV[id] || {kolor:"#666"}).kolor;
+const JEZ = k => D.jez[k] || k;
+const regiony = (() => { try { return new Intl.DisplayNames(["pl"], {type:"region"}); } catch(e) { return null; } })();
+const kraj = c => { try { return regiony ? regiony.of(c) : c; } catch(e) { return c; } };
+const QN = {sd:"SD", hd:"HD", qhd:"QHD", uhd:"4K"};
+// odmiana: 1 sezon, 2–4 sezony, 5+ sezonów (12–14 też „sezonów”)
+const odm = (n, a, b, c) => n === 1 ? a : (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14)) ? b : c;
+const WKRAJU = {pl:"W Polsce", de:"W Niemczech", us:"W USA", gb:"W Wielkiej Brytanii", fr:"We Francji"};
+const dzien = ts => ts ? new Date(ts*1000).toLocaleDateString("pl-PL", {day:"numeric", month:"long", year:"numeric"}) : "";
+const byId = {}; D.s.forEach(s => byId[s.id] = s);
+
+// pola pomocnicze do filtrowania
+const dodaneKiedy = {};
+D.h.forEach(h => { if (h.e === "dodano") dodaneKiedy[h.id] = Math.max(dodaneKiedy[h.id] || 0, h.dt); });
+D.s.forEach(s => {
+  s._txt = [s.t, s.te, s.to, ...(s.c||[]), ...(s.ob||[])].filter(Boolean).join(" ").toLowerCase();
+  s._svc = new Set(s.d.map(d => d.s));
+  s._plA = s.d.some(d => d.a.includes("pol"));
+  s._plS = s.d.some(d => d.n.includes("pol") || d.cc.includes("pol"));
+  s._uhd = s.d.some(d => d.q === "uhd");
+  s._leave = s.d.some(d => d.wy) || s.z.some(z => z.ty === "expiring");
+  s._added = Math.max(dodaneKiedy[s.id] || 0, ...s.d.map(d => d.od || 0));
+});
+
+// ---- nagłówek ----
+const akt = new Date(D.meta.aktualizacja);
+$("#sub").textContent = `${D.meta.liczba.toLocaleString("pl-PL")} ${odm(D.meta.liczba, "serial", "seriale", "seriali")} ·${D.meta.serwisy.map(s=>s.nazwa).join(", ")} · ${kraj(D.meta.kraj.toUpperCase())} · aktualizacja ${akt.toLocaleString("pl-PL", {dateStyle:"long", timeStyle:"short"})}`;
+
+// ---- filtry ----
+const F = {q:"", genre:"", sort:"pop", svc:new Set(), plAudio:false, plSubs:false, uhd:false, multi:false, leaving:false};
+const gatunki = [...new Set(D.s.flatMap(s => s.g))].sort((a,b) => a.localeCompare(b,"pl"));
+$("#genre").insertAdjacentHTML("beforeend", gatunki.map(g => `<option>${esc(g)}</option>`).join(""));
+$("#svc-row").innerHTML = D.meta.serwisy.map(s =>
+  `<span class="chip" role="button" tabindex="0" aria-pressed="false" data-svc="${esc(s.id)}"><i class="dot" style="background:${esc(svColor(s.id))}"></i>${esc(s.nazwa)}</span>`).join("");
+
+function toggleChip(el){
+  const on = el.getAttribute("aria-pressed") !== "true";
+  el.setAttribute("aria-pressed", on);
+  if (el.dataset.svc) { on ? F.svc.add(el.dataset.svc) : F.svc.delete(el.dataset.svc); }
+  else F[el.dataset.f] = on;
+  render();
+}
+document.querySelectorAll(".chip").forEach(el => {
+  el.onclick = () => toggleChip(el);
+  el.onkeydown = e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggleChip(el); } };
+});
+let tq; $("#q").oninput = e => { clearTimeout(tq); tq = setTimeout(() => { F.q = e.target.value.trim().toLowerCase(); render(); }, 120); };
+$("#genre").onchange = e => { F.genre = e.target.value; render(); };
+$("#sort").onchange = e => { F.sort = e.target.value; render(); };
+
+function filtruj(){
+  const slowa = F.q.split(/\s+/).filter(Boolean);
+  let r = D.s.filter(s => s.d.length &&
+    (!slowa.length || slowa.every(w => s._txt.includes(w))) &&
+    (!F.genre || s.g.includes(F.genre)) &&
+    (!F.svc.size || [...F.svc].some(x => s._svc.has(x))) &&
+    (!F.plAudio || s._plA) && (!F.plSubs || s._plS) && (!F.uhd || s._uhd) &&
+    (!F.multi || s._svc.size > 1) && (!F.leaving || s._leave));
+  const cmp = {
+    pop: (a,b) => (a.p ?? 1e9) - (b.p ?? 1e9),
+    rating: (a,b) => (b.r ?? -1) - (a.r ?? -1),
+    new: (a,b) => (b.y[1] || b.y[0] || 0) - (a.y[1] || a.y[0] || 0),
+    az: (a,b) => a.t.localeCompare(b.t, "pl"),
+    added: (a,b) => b._added - a._added,
+  }[F.sort];
+  return r.sort(cmp);
+}
+
+// ---- karty ----
+const inicjaly = t => esc((t || "?").split(/\s+/).slice(0,2).map(w => w[0]).join("").toUpperCase());
+function poster(s){
+  return `<div class="poster">${inicjaly(s.t)}${s.img ? `<img loading="lazy" alt="" src="${esc(s.img)}" onerror="this.remove()">` : ""}`;
+}
+function lata(s){ const [a,b] = s.y; return a ? (b && b !== a ? `${a}–${b}` : `${a}`) : ""; }
+function dlugosc(s){ return s.rt ? `${s.rt[0]} min` : ""; }
+function karta(s){
+  const badges = [s._plA ? '<span class="b pl">PL audio</span>' : "", s._plS && !s._plA ? '<span class="b">PL napisy</span>' : "", s._uhd ? '<span class="b">4K</span>' : ""].join("");
+  const meta = [lata(s), s.se ? `${s.se} sez.` : "", s.ep ? `${s.ep} odc.` : "", dlugosc(s)].filter(Boolean).join(" · ");
+  return `<button class="card" data-id="${esc(s.id)}">${poster(s)}<div class="badges">${badges}</div></div>
+    <div class="body"><div class="title">${esc(s.t)}</div><div class="meta">${esc(meta)}</div>
+    <div class="svc">${s.d.map(d => `<span style="background:${esc(svColor(d.s))}">${esc(svName(d.s))}</span>`).join("")}</div></div></button>`;
+}
+
+let lista = [], pokazane = 0; const PORCJA = 60;
+function render(){
+  lista = filtruj(); pokazane = 0;
+  $("#grid").innerHTML = "";
+  $("#count").textContent = `${lista.length.toLocaleString("pl-PL")} ${odm(lista.length, "wynik", "wyniki", "wyników")}`;
+  if (!lista.length) $("#grid").innerHTML = '<div class="empty">Brak seriali dla tych filtrów.</div>';
+  dalej();
+}
+function dalej(){
+  const kawalek = lista.slice(pokazane, pokazane + PORCJA);
+  $("#grid").insertAdjacentHTML("beforeend", kawalek.map(karta).join(""));
+  pokazane += kawalek.length;
+  $("#more").hidden = pokazane >= lista.length;
+  $("#more").textContent = `Pokaż więcej (${(lista.length - pokazane).toLocaleString("pl-PL")})`;
+}
+$("#more").onclick = dalej;
+document.addEventListener("click", e => {
+  const el = e.target.closest("[data-id]");
+  if (el && !el.closest("dialog")) otworz(el.dataset.id);
+});
+
+// ---- szczegóły ----
+const lj = arr => arr.length ? arr.map(k => k === "pol" ? `<span class="pl">${esc(JEZ(k))}</span>` : esc(JEZ(k))).join(", ") : "—";
+function otworz(id){
+  const s = byId[id]; if (!s) return;
+  const facts = [lata(s), s.se ? `${s.se} ${odm(s.se, "sezon", "sezony", "sezonów")}` : "",
+    s.ep ? `${s.ep} ${odm(s.ep, "odcinek", "odcinki", "odcinków")}` : "",
+    s.rt ? (s.rt[1] !== s.rt[2] ? `odcinek ${s.rt[1]}–${s.rt[2]} min (zwykle ${s.rt[0]})` : `odcinek ${s.rt[0]} min`) : "",
+    s.r != null ? `ocena ${s.r}/100` : "", ...s.g].filter(Boolean);
+  const opcje = s.d.map(d => `<div class="opt"><div class="hd"><i class="dot" style="background:${esc(svColor(d.s))}"></i>${esc(svName(d.s))}
+      ${d.l ? `<a href="${esc(d.l)}" target="_blank" rel="noopener">Otwórz w serwisie ↗</a>` : ""}</div>
+      <div class="kv"><b>Jakość</b><span>${esc(QN[d.q] || "—")}</span>
+      <b>Audio</b><span>${lj(d.a)}</span>
+      <b>Napisy</b><span>${lj(d.n)}</span>
+      ${d.cc.length ? `<b>Dla niesłyszących</b><span>${lj(d.cc)}</span>` : ""}
+      ${d.od ? `<b>Dostępny od</b><span>${dzien(d.od)}</span>` : ""}
+      ${d.wy ? `<b>Znika</b><span style="color:var(--warn);font-weight:600">${dzien(d.wy)}</span>` : ""}</div></div>`).join("");
+  const zap = s.z.map(z => `<div class="opt"><div class="hd"><span class="tag soon">${z.ty === "expiring" ? "Znika" : "Wchodzi"}</span>
+      ${esc(svName(z.s))}${z.sz ? ` · sezon ${z.sz}` : ""} · ${z.dt ? dzien(z.dt) : "data nieznana"}</div></div>`).join("");
+  let swiat = "";
+  if (s.w) {
+    const wiersze = Object.entries(s.w).map(([p, kr]) => [D.dost[p], kr.map(i => D.kraje[i])])
+      .sort((a,b) => b[1].length - a[1].length);
+    const lacznie = new Set(wiersze.flatMap(w => w[1])).size;
+    swiat = `<div class="sec world"><h3>Na świecie · ${lacznie} ${odm(lacznie, "kraj", "kraje", "krajów")} (abonament / za darmo)</h3>
+      ${wiersze.slice(0, 8).map(([p, kr]) => `<div class="p"><b>${esc(p)}</b><span>${kr.length} ${odm(kr.length, "kraj", "kraje", "krajów")}:${esc(kr.map(kraj).sort((a,b)=>a.localeCompare(b,"pl")).join(", "))}</span></div>`).join("")}
+      ${wiersze.length > 8 ? `<details><summary>Pozostałe serwisy (${wiersze.length - 8})</summary>${wiersze.slice(8).map(([p, kr]) => `<div class="p"><b>${esc(p)}</b><span>${esc(kr.map(kraj).join(", "))}</span></div>`).join("")}</details>` : ""}</div>`;
+  }
+  const ludzie = [s.c && s.c.length ? `Twórcy: ${s.c.join(", ")}` : "", s.ob && s.ob.length ? `Obsada: ${s.ob.join(", ")}` : ""].filter(Boolean);
+  $("#dlg").innerHTML = `<button class="close" aria-label="Zamknij">×</button><div class="dlg"><div>${poster(s)}</div></div>
+    <div><h2>${esc(s.t)}</h2>${s.te || s.to ? `<div class="meta">${esc([s.te, s.to].filter(Boolean).join(" · "))}</div>` : ""}
+    <div class="facts">${facts.map(f => `<span>${esc(f)}</span>`).join("")}</div>
+    ${s.o ? `<p class="ov">${esc(s.o)}</p>` : ""}
+    ${ludzie.length ? `<p class="meta">${esc(ludzie.join(" · "))}</p>` : ""}
+    <div class="sec"><h3>${esc(WKRAJU[D.meta.kraj] || "Kraj: " + kraj(D.meta.kraj.toUpperCase()))}</h3>${opcje || '<div class="meta">Obecnie niedostępny w wybranych serwisach.</div>'}</div>
+    ${zap ? `<div class="sec"><h3>Zapowiedzi</h3>${zap}</div>` : ""}
+    ${swiat}
+    <div class="sec meta">${[s.imdb ? `<a href="https://www.imdb.com/title/${esc(s.imdb)}/" target="_blank" rel="noopener">IMDb ↗</a>` : "", s.tmdb ? `<a href="https://www.themoviedb.org/${esc(s.tmdb)}" target="_blank" rel="noopener">TMDB ↗</a>` : ""].filter(Boolean).join(" · ")}</div>
+    </div></div>`;
+  $("#dlg").querySelector(".close").onclick = () => $("#dlg").close();
+  $("#dlg").showModal();
+  $("#dlg").scrollTop = 0;
+}
+$("#dlg").addEventListener("click", e => { if (e.target === $("#dlg")) $("#dlg").close(); });
+
+// ---- nowości i zapowiedzi ----
+function opisZmiany(h){
+  if (h.e === "dodano") return ["add", "Dodano", ""];
+  if (h.e === "usunieto") return ["del", "Usunięto", ""];
+  const x = [];
+  for (const k of ["audio", "napisy"]) if (h.x[k]) {
+    const n = k === "audio" ? "audio" : "napisy";
+    if (h.x[k].dodano.length) x.push(`+ ${n}: ${h.x[k].dodano.map(JEZ).join(", ")}`);
+    if (h.x[k].usunieto.length) x.push(`− ${n}: ${h.x[k].usunieto.map(JEZ).join(", ")}`);
+  }
+  if (h.x.jakosc) x.push(`jakość: ${QN[h.x.jakosc.bylo] || "?"} → ${QN[h.x.jakosc.jest] || "?"}`);
+  return ["chg", "Zmiana", x.join(" · ")];
+}
+function nowosci(){
+  const el = $("#view-nowosci");
+  if (!D.h.length) { el.innerHTML = '<div class="empty">Brak zmian od pierwszego pobrania. Nowości pojawią się po kolejnych aktualizacjach.</div>'; return; }
+  let html = "", ostatni = "";
+  for (const h of D.h) {
+    const d = dzien(h.dt); if (d !== ostatni) { html += `<div class="day">${d}</div>`; ostatni = d; }
+    const s = byId[h.id]; const [cls, tag, x] = opisZmiany(h);
+    html += `<div class="ev" data-id="${esc(h.id)}"><span class="tag ${cls}">${tag}</span><i class="dot" style="background:${esc(svColor(h.s))}"></i>
+      <span class="t">${esc(s ? s.t : h.id)}</span><span class="x">${esc(x || svName(h.s))}</span></div>`;
+  }
+  el.innerHTML = html;
+}
+function zapowiedzi(){
+  const el = $("#view-zapowiedzi");
+  const z = D.s.flatMap(s => s.z.map(x => ({...x, s0:s}))).sort((a,b) => (a.dt || 9e12) - (b.dt || 9e12));
+  const gr = {expiring:"Wkrótce znika", upcoming:"Wkrótce wchodzi"};
+  el.innerHTML = Object.entries(gr).map(([typ, nazwa]) => {
+    const w = z.filter(x => x.ty === typ);
+    return `<div class="day">${nazwa} (${w.length})</div>` + (w.length ? w.map(x => `<div class="ev" data-id="${esc(x.s0.id)}">
+      <span class="tag ${typ === "expiring" ? "del" : "add"}">${x.dt ? dzien(x.dt) : "wkrótce"}</span><i class="dot" style="background:${esc(svColor(x.s))}"></i>
+      <span class="t">${esc(x.s0.t)}</span><span class="x">${esc(svName(x.s))}${x.sz ? ` · sezon ${x.sz}` : ""}</span></div>`).join("") : '<div class="meta">Brak.</div>');
+  }).join("");
+}
+$("#n-now").textContent = D.h.length || "";
+$("#n-zap").textContent = D.s.reduce((n, s) => n + s.z.length, 0) || "";
+
+document.querySelectorAll(".tab").forEach(t => t.onclick = () => {
+  document.querySelectorAll(".tab").forEach(x => x.setAttribute("aria-selected", x === t));
+  const tab = t.dataset.tab;
+  $("#view-katalog").hidden = tab !== "katalog"; $("#filters").hidden = tab !== "katalog";
+  $("#view-nowosci").hidden = tab !== "nowosci"; $("#view-zapowiedzi").hidden = tab !== "zapowiedzi";
+  if (tab === "nowosci") nowosci(); if (tab === "zapowiedzi") zapowiedzi();
+});
+
+render();
+})();
+</script>
+</body>
+</html>
