@@ -13,6 +13,8 @@ on:
 
 permissions:
   contents: write                  # potrzebne do podmiany plików w Releases
+  pages: write                     # publikacja strony na GitHub Pages
+  id-token: write                  # wymagane przez actions/deploy-pages
 
 concurrency:
   group: aktualizacja-seriali
@@ -26,6 +28,8 @@ jobs:
   aktualizuj:
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    outputs:
+      strona: ${{ steps.pages.outputs.gotowe }}
     defaults:
       run:
         working-directory: ${{ env.FOLDER }}
@@ -72,3 +76,31 @@ jobs:
             cp seriale.db "$KOPIA" && gh release upload "$TAG" "$KOPIA"
           fi
           gh release edit "$TAG" --notes "Ostatnia aktualizacja: $(date -u '+%Y-%m-%d %H:%M UTC'). Plik **seriale.html** to strona do pobrania (otwórz w przeglądarce). Plik seriale.db to baza danych SQLite. Pliki kopia-RRRR-MM.db to comiesięczne kopie zapasowe."
+
+      - name: Przygotuj stronę dla GitHub Pages
+        id: pages
+        if: ${{ always() && hashFiles(format('{0}/seriale.html', env.FOLDER)) != '' }}
+        run: |
+          rm -rf _site && mkdir _site
+          cp seriale.html _site/index.html
+          cp login.html _site/login.html
+          echo "gotowe=true" >> "$GITHUB_OUTPUT"
+
+      - name: Spakuj stronę dla GitHub Pages
+        if: ${{ always() && steps.pages.outputs.gotowe == 'true' }}
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ env.FOLDER }}/_site
+
+  publikuj:
+    # Wysyła wygenerowaną stronę na GitHub Pages (Settings → Pages → Source: GitHub Actions).
+    needs: aktualizuj
+    if: ${{ always() && needs.aktualizuj.outputs.strona == 'true' }}
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - name: Opublikuj na GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
