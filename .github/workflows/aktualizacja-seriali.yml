@@ -84,6 +84,7 @@ jobs:
           rm -rf _site && mkdir _site
           cp seriale.html _site/index.html
           cp login.html _site/login.html
+          cp ../logo.png ../icon.png _site/
           echo "gotowe=true" >> "$GITHUB_OUTPUT"
 
       - name: Spakuj stronę dla GitHub Pages
