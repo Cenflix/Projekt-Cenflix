@@ -16,5 +16,5 @@
   "tmdb_odswiezanie_co_dni": 30,
   "tmdb_max_seriali_na_uruchomienie": 3000,
   "historia_na_stronie_dni": 60,
-  "supabase": {"url": "https://lkjqkrmkeqpdpibwrphn.supabase.co/rest/v1/", "klucz": "sb_publishable_H5rXcNweiIJyVFsAbdE-Ow_3PTrWEE1"}
+  "supabase": {"url": "https://lkjqkrmkeqpdpibwrphn.supabase.co", "klucz": "sb_publishable_H5rXcNweiIJyVFsAbdE-Ow_3PTrWEE1"}
 }
