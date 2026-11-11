@@ -47,6 +47,12 @@ select{padding:8px 10px;border:1px solid var(--line);border-radius:10px;backgrou
 .dot{width:9px;height:9px;border-radius:50%;flex:none;display:inline-block}
 .count{color:var(--muted);font-size:13px;margin-left:auto}
 .theme{background:none;border:1px solid var(--line);border-radius:10px;padding:7px 10px;cursor:pointer}
+.akcje{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.konto{display:flex;align-items:center;gap:10px;font-size:13.5px;color:var(--muted)}
+.konto b{color:var(--ink)}
+.konto a,.konto button{font:inherit;font-size:13.5px;border-radius:10px;padding:7px 12px;cursor:pointer;text-decoration:none}
+.konto a{background:var(--accent);color:var(--accent-ink);border:1px solid var(--accent);font-weight:600}
+.konto button{background:none;border:1px solid var(--line);color:var(--ink)}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:14px;padding:16px 0}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;box-shadow:var(--shadow);text-align:left;padding:0}
 .card:hover{border-color:var(--muted)}
@@ -113,7 +119,10 @@ footer p{margin:4px 0}
       <h1>Seriale <span>w serwisach</span></h1>
       <div class="sub" id="sub"></div>
     </div>
-    <button class="theme" id="theme" title="Zmień motyw">◐ Motyw</button>
+    <div class="akcje">
+      <div class="konto" id="konto" hidden></div>
+      <button class="theme" id="theme" title="Zmień motyw">◐ Motyw</button>
+    </div>
   </div>
   <div class="tabs" role="tablist">
     <button class="tab" role="tab" data-tab="katalog" aria-selected="true">Katalog</button>
@@ -383,6 +392,49 @@ document.querySelectorAll(".tab").forEach(t => t.onclick = () => {
 });
 
 render();
+})();
+</script>
+<script>
+// ---- konto (Supabase) ----
+// Ustawienia wstawia generuj_strone.py z config.json. Gdy ich brak albo strona jest
+// otwarta z dysku (plik z Releases), przycisk logowania się nie pokazuje.
+const SUPABASE = /*__SUPABASE__*/null;
+(function(){
+"use strict";
+const box = document.getElementById("konto");
+if (!SUPABASE || location.protocol === "file:") return;
+
+function pokaz(sb, user){
+  box.textContent = "";
+  if (user) {
+    const m = user.user_metadata || {};
+    const imie = m.display_name || m.full_name || m.name || user.email || "użytkownik";
+    const info = document.createElement("span");
+    info.append("Zalogowano jako ");
+    const b = document.createElement("b"); b.textContent = imie; info.append(b);
+    const wyloguj = document.createElement("button");
+    wyloguj.type = "button"; wyloguj.textContent = "Wyloguj się";
+    wyloguj.onclick = async () => { wyloguj.disabled = true; await sb.auth.signOut(); pokaz(sb, null); };
+    box.append(info, wyloguj);
+  } else {
+    const a = document.createElement("a");
+    a.href = "login.html"; a.textContent = "Zaloguj się";
+    box.append(a);
+  }
+  box.hidden = false;
+}
+
+const s = document.createElement("script");
+s.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2";
+s.onload = async () => {
+  try {
+    const sb = window.supabase.createClient(SUPABASE.url, SUPABASE.klucz);
+    const { data } = await sb.auth.getSession();
+    pokaz(sb, data.session && data.session.user);
+  } catch (e) { console.warn("Logowanie niedostępne:", e); }
+};
+s.onerror = () => console.warn("Nie udało się wczytać biblioteki Supabase.");
+document.head.appendChild(s);
 })();
 </script>
 </body>

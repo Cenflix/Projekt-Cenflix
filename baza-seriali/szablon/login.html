@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Logowanie – Seriale w serwisach</title>
+<style>
+:root{
+  --bg:#ccccccff; --panel:#ffffff; --ink:#1b1b1f; --muted:#62626b; --line:#e3e1dc;
+  --accent:#d1462f; --accent-ink:#ffffff; --err:#b3261e;
+  --shadow:0 1px 2px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121215; --panel:#1b1b20; --ink:#ededf0; --muted:#a0a0aa; --line:#2c2c33;
+    --accent:#ff6a4d; --accent-ink:#111; --err:#ff8a80;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 4px 16px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121215; --panel:#1b1b20; --ink:#ededf0; --muted:#a0a0aa; --line:#2c2c33;
+  --accent:#ff6a4d; --accent-ink:#111; --err:#ff8a80;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 4px 16px rgba(0,0,0,.3);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);
+  width:100%;max-width:380px;padding:28px}
+h1{font-size:24px;line-height:1.1;margin:0 0 4px;letter-spacing:-.02em}
+h1 span{color:var(--accent)}
+.sub{color:var(--muted);font-size:13.5px;margin:0 0 20px}
+label{display:block;font-size:13px;color:var(--muted);margin:12px 0 5px}
+input{width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);font:inherit}
+input:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent}
+button{width:100%;margin-top:20px;padding:10px;border:0;border-radius:10px;background:var(--accent);color:var(--accent-ink);
+  font:inherit;font-weight:600;cursor:pointer}
+button:disabled{opacity:.6;cursor:default}
+.msg{min-height:20px;margin-top:12px;font-size:13.5px;color:var(--err)}
+.back{display:block;margin-top:14px;text-align:center;color:var(--muted);font-size:13.5px}
+</style>
+</head>
+<body>
+<main class="card">
+  <h1>Seriale <span>w serwisach</span></h1>
+  <p class="sub">Zaloguj się na konto testowe.</p>
+  <form id="form" novalidate>
+    <label for="email">E-mail</label>
+    <input id="email" type="email" autocomplete="username" required>
+    <label for="haslo">Hasło</label>
+    <input id="haslo" type="password" autocomplete="current-password" required>
+    <button id="btn" type="submit" disabled>Zaloguj się</button>
+    <div class="msg" id="msg" role="alert"></div>
+  </form>
+  <a class="back" href="./">← Wróć do strony głównej</a>
+</main>
+
+<script>
+try { const t = localStorage.getItem("motyw"); if (t) document.documentElement.dataset.theme = t; } catch(e) {}
+const SUPABASE = /*__SUPABASE__*/null;
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function(){
+"use strict";
+const $ = s => document.querySelector(s);
+const msg = $("#msg"), btn = $("#btn");
+
+if (!SUPABASE) { msg.textContent = "Logowanie nie jest jeszcze skonfigurowane."; return; }
+if (!window.supabase) { msg.textContent = "Nie udało się wczytać modułu logowania. Odśwież stronę."; return; }
+
+const sb = window.supabase.createClient(SUPABASE.url, SUPABASE.klucz);
+
+// Ktoś już zalogowany – od razu na stronę główną.
+sb.auth.getSession().then(({ data }) => {
+  if (data.session) location.replace("./");
+  else btn.disabled = false;
+});
+
+$("#form").onsubmit = async (e) => {
+  e.preventDefault();
+  const email = $("#email").value.trim(), password = $("#haslo").value;
+  if (!email || !password) { msg.textContent = "Podaj e-mail i hasło."; return; }
+  msg.textContent = ""; btn.disabled = true; btn.textContent = "Logowanie…";
+  const { error } = await sb.auth.signInWithPassword({ email, password });
+  if (error) {
+    msg.textContent = error.message === "Invalid login credentials"
+      ? "Nieprawidłowy e-mail lub hasło." : "Nie udało się zalogować: " + error.message;
+    btn.disabled = false; btn.textContent = "Zaloguj się";
+    return;
+  }
+  location.replace("./");
+};
+})();
+</script>
+</body>
+</html>

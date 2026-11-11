@@ -11,6 +11,8 @@ from wspolne import KATALOG, log, otworz_baze, stan_get, teraz, wczytaj_konfigur
 
 SZABLON = os.path.join(KATALOG, "szablon", "strona.html")
 WYJSCIE = os.environ.get("SERIALE_HTML", os.path.join(KATALOG, "seriale.html"))
+SZABLON_LOGOWANIA = os.path.join(KATALOG, "szablon", "login.html")
+WYJSCIE_LOGOWANIA = os.path.join(os.path.dirname(os.path.abspath(WYJSCIE)), "login.html")
 
 JEZYKI = {
     "pol": "polski", "eng": "angielski", "deu": "niemiecki", "ger": "niemiecki", "fra": "francuski",
@@ -125,11 +127,30 @@ def main():
     if znacznik not in szablon:
         sys.exit("W szablonie brakuje znacznika /*__DANE__*/null")
     json_txt = json.dumps(dane, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
-    html = szablon.replace(znacznik, json_txt, 1)
+    html = wstaw_supabase(szablon.replace(znacznik, json_txt, 1), cfg)
     with open(WYJSCIE, "w", encoding="utf-8") as f:
         f.write(html)
     log(f"Zapisano {WYJSCIE}: {len(seriale)} seriali, {len(historia)} wpisów historii, "
         f"{len(html) / 1e6:.1f} MB")
+
+    with open(SZABLON_LOGOWANIA, encoding="utf-8") as f:
+        login = wstaw_supabase(f.read(), cfg)
+    with open(WYJSCIE_LOGOWANIA, "w", encoding="utf-8") as f:
+        f.write(login)
+    log(f"Zapisano {WYJSCIE_LOGOWANIA}" + ("" if supabase_json(cfg) != "null"
+                                           else " (Supabase nieskonfigurowany – logowanie ukryte)"))
+
+
+def supabase_json(cfg):
+    sb = cfg.get("supabase") or {}
+    if not (sb.get("url") and sb.get("klucz")):
+        return "null"
+    return json.dumps({"url": sb["url"], "klucz": sb["klucz"]}).replace("</", "<\\/")
+
+
+def wstaw_supabase(html, cfg):
+    """Wstawia publiczny adres i klucz Supabase w znacznik /*__SUPABASE__*/null."""
+    return html.replace("/*__SUPABASE__*/null", supabase_json(cfg), 1)
 
 
 if __name__ == "__main__":

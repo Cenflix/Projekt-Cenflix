@@ -67,6 +67,38 @@ python skrypty/aktualizuj.py
 python skrypty/generuj_strone.py
 ```
 
+## Strona na GitHub Pages i logowanie
+
+Każde uruchomienie workflow publikuje stronę pod adresem **https://cenflix.github.io/Projekt-Cenflix/**:
+`seriale.html` jako `index.html` oraz `login.html` (strona logowania). Pliki w Releases zostają bez zmian.
+
+**Jednorazowo:** Settings → Pages → Build and deployment → Source: **GitHub Actions**,
+potem Actions → Aktualizacja bazy seriali → Run workflow (tryb `tylko_strona`).
+
+Logowanie obsługuje [Supabase](https://supabase.com) (darmowy plan). Dopóki `supabase` w `config.json`
+jest puste, przycisk „Zaloguj się” jest ukryty. W pliku pobranym z Releases i otwartym z dysku jest ukryty zawsze.
+
+### Konfiguracja Supabase (jednorazowo)
+
+1. Załóż konto i nowy projekt na supabase.com (region np. Frankfurt).
+2. **Authentication → Sign In / Providers**: wyłącz **Allow new users to sign up** (rejestracji na razie nie ma).
+3. **Authentication → Users → Add user → Create new user**: e-mail i hasło konta testowego,
+   zaznacz **Auto Confirm User**.
+4. **SQL Editor** – nadaj kontu wyświetlaną nazwę (podmień e-mail):
+   ```sql
+   update auth.users
+   set raw_user_meta_data = coalesce(raw_user_meta_data, '{}'::jsonb) || '{"display_name": "Jan Flixer"}'
+   where email = 'jan.flixer@example.com';
+   ```
+5. **Authentication → URL Configuration → Site URL**: `https://cenflix.github.io/Projekt-Cenflix/`.
+6. **Project Settings → API** (lub **API Keys**): skopiuj **Project URL** i klucz publiczny
+   (**publishable** albo **anon public** – NIE `service_role`/`secret`) i wpisz do `config.json`:
+   ```json
+   "supabase": {"url": "https://xxxx.supabase.co", "klucz": "sb_publishable_..."}
+   ```
+   Ten klucz jest z założenia publiczny i trafia do kodu strony. Klucza `service_role`/`secret` nigdy nie wpisuj.
+7. Uruchom workflow w trybie `tylko_strona`.
+
 ## Źródła danych i regulamin
 
 - Dostępność, jakość, audio i napisy: [Streaming Availability API by Movie of the Night](https://www.movieofthenight.com/about/api).
