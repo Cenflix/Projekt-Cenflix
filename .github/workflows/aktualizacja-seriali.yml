@@ -1,6 +1,13 @@
 name: Aktualizacja bazy seriali
 
 on:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/aktualizacja-seriali.yml"
+      - "baza-seriali/config.json"
+      - "baza-seriali/skrypty/generuj_strone.py"
+      - "baza-seriali/szablon/**"
   schedule:
     - cron: "17 4 */2 * *"        # co 2 dni o 4:17 UTC (ok. 5:17–6:17 w Polsce)
   workflow_dispatch:               # przycisk „Run workflow” w zakładce Actions
@@ -51,7 +58,7 @@ jobs:
           fi
 
       - name: Aktualizuj bazę
-        if: ${{ inputs.tryb != 'tylko_strona' }}
+        if: ${{ github.event_name != 'push' && inputs.tryb != 'tylko_strona' }}
         env:
           SA_API_KEY: ${{ secrets.SA_API_KEY }}
           TMDB_API_KEY: ${{ secrets.TMDB_API_KEY }}
@@ -63,7 +70,7 @@ jobs:
         run: python skrypty/generuj_strone.py
 
       - name: Wyślij bazę i stronę do Releases
-        if: ${{ always() && hashFiles(format('{0}/seriale.db', env.FOLDER)) != '' }}
+        if: ${{ github.event_name != 'push' && always() && hashFiles(format('{0}/seriale.db', env.FOLDER)) != '' }}
         run: |
           if ! gh release view "$TAG" >/dev/null 2>&1; then
             gh release create "$TAG" --title "Baza seriali i strona" \
@@ -84,6 +91,7 @@ jobs:
           rm -rf _site && mkdir _site
           cp seriale.html _site/index.html
           cp login.html _site/login.html
+          cp rejestracja.html _site/rejestracja.html
           cp ../logo.png ../icon.png _site/
           echo "gotowe=true" >> "$GITHUB_OUTPUT"
 

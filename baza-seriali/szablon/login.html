@@ -8,19 +8,19 @@
 <style>
 :root{
   --bg:#ccccccff; --panel:#ffffff; --ink:#1b1b1f; --muted:#62626b; --line:#e3e1dc;
-  --accent:#d1462f; --accent-ink:#ffffff; --err:#b3261e;
+  --accent:#d1462f; --accent-ink:#ffffff; --err:#b3261e; --ok:#1f7a4d;
   --shadow:0 1px 2px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.05);
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --bg:#121215; --panel:#1b1b20; --ink:#ededf0; --muted:#a0a0aa; --line:#2c2c33;
-    --accent:#ff6a4d; --accent-ink:#111; --err:#ff8a80;
+    --accent:#ff6a4d; --accent-ink:#111; --err:#ff8a80; --ok:#4cc38a;
     --shadow:0 1px 2px rgba(0,0,0,.4),0 4px 16px rgba(0,0,0,.3);
   }
 }
 :root[data-theme="dark"]{
   --bg:#121215; --panel:#1b1b20; --ink:#ededf0; --muted:#a0a0aa; --line:#2c2c33;
-  --accent:#ff6a4d; --accent-ink:#111; --err:#ff8a80;
+  --accent:#ff6a4d; --accent-ink:#111; --err:#ff8a80; --ok:#4cc38a;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 4px 16px rgba(0,0,0,.3);
 }
 *{box-sizing:border-box}
@@ -41,6 +41,7 @@ button{width:100%;margin-top:20px;padding:10px;border:0;border-radius:10px;backg
   font:inherit;font-weight:600;cursor:pointer}
 button:disabled{opacity:.6;cursor:default}
 .msg{min-height:20px;margin-top:12px;font-size:13.5px;color:var(--err)}
+.msg.success{color:var(--ok)}
 .back{display:block;margin-top:14px;text-align:center;color:var(--muted);font-size:13.5px}
 </style>
 </head>
@@ -48,15 +49,16 @@ button:disabled{opacity:.6;cursor:default}
 <main class="box">
 <h1><img src="./logo.png" alt="Cenflix" height="61"></h1>
 <div class="card">
-  <p class="sub">Zaloguj się na konto testowe.</p>
+  <p class="sub">Zaloguj się na swoje konto.</p>
   <form id="form" novalidate>
     <label for="email">E-mail</label>
     <input id="email" type="email" autocomplete="username" required>
     <label for="haslo">Hasło</label>
     <input id="haslo" type="password" autocomplete="current-password" required>
     <button id="btn" type="submit" disabled>Zaloguj się</button>
-    <div class="msg" id="msg" role="alert"></div>
+    <div class="msg" id="msg" role="alert" aria-live="polite"></div>
   </form>
+  <a class="back" href="./rejestracja.html">Nie masz konta? Utwórz je</a>
   <a class="back" href="./">← Wróć do strony głównej</a>
 </div>
 </main>
@@ -71,6 +73,10 @@ const SUPABASE = /*__SUPABASE__*/null;
 "use strict";
 const $ = s => document.querySelector(s);
 const msg = $("#msg"), btn = $("#btn");
+if (new URLSearchParams(location.search).get("registered") === "1") {
+  msg.className = "msg success";
+  msg.textContent = "Konto utworzone. Zaloguj się.";
+}
 
 if (!SUPABASE) { msg.textContent = "Logowanie nie jest jeszcze skonfigurowane."; return; }
 if (!window.supabase) { msg.textContent = "Nie udało się wczytać modułu logowania. Odśwież stronę."; return; }
@@ -87,7 +93,7 @@ $("#form").onsubmit = async (e) => {
   e.preventDefault();
   const email = $("#email").value.trim(), password = $("#haslo").value;
   if (!email || !password) { msg.textContent = "Podaj e-mail i hasło."; return; }
-  msg.textContent = ""; btn.disabled = true; btn.textContent = "Logowanie…";
+  msg.className = "msg"; msg.textContent = ""; btn.disabled = true; btn.textContent = "Logowanie…";
   const { error } = await sb.auth.signInWithPassword({ email, password });
   if (error) {
     msg.textContent = error.message === "Invalid login credentials"

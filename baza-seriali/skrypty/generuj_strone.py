@@ -13,6 +13,8 @@ SZABLON = os.path.join(KATALOG, "szablon", "strona.html")
 WYJSCIE = os.environ.get("SERIALE_HTML", os.path.join(KATALOG, "seriale.html"))
 SZABLON_LOGOWANIA = os.path.join(KATALOG, "szablon", "login.html")
 WYJSCIE_LOGOWANIA = os.path.join(os.path.dirname(os.path.abspath(WYJSCIE)), "login.html")
+SZABLON_REJESTRACJI = os.path.join(KATALOG, "szablon", "rejestracja.html")
+WYJSCIE_REJESTRACJI = os.path.join(os.path.dirname(os.path.abspath(WYJSCIE)), "rejestracja.html")
 
 JEZYKI = {
     "pol": "polski", "eng": "angielski", "deu": "niemiecki", "ger": "niemiecki", "fra": "francuski",
@@ -139,6 +141,13 @@ def main():
         f.write(login)
     log(f"Zapisano {WYJSCIE_LOGOWANIA}" + ("" if supabase_json(cfg) != "null"
                                            else " (Supabase nieskonfigurowany – logowanie ukryte)"))
+
+    with open(SZABLON_REJESTRACJI, encoding="utf-8") as f:
+        rejestracja = wstaw_supabase(f.read(), cfg)
+    with open(WYJSCIE_REJESTRACJI, "w", encoding="utf-8") as f:
+        f.write(rejestracja)
+    log(f"Zapisano {WYJSCIE_REJESTRACJI}" + ("" if supabase_json(cfg) != "null"
+                                               else " (Supabase nieskonfigurowany)"))
 
 
 def supabase_json(cfg):

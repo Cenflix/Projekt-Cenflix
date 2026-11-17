@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Utwórz konto – Seriale w serwisach</title>
+<link rel="icon" href="./icon.png">
+<style>
+:root{
+  --bg:#ccccccff; --panel:#ffffff; --ink:#1b1b1f; --muted:#62626b; --line:#e3e1dc;
+  --accent:#d1462f; --accent-ink:#ffffff; --err:#b3261e; --ok:#1f7a4d;
+  --shadow:0 1px 2px rgba(0,0,0,.06),0 4px 16px rgba(0,0,0,.05);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#121215; --panel:#1b1b20; --ink:#ededf0; --muted:#a0a0aa; --line:#2c2c33;
+    --accent:#ff6a4d; --accent-ink:#111; --err:#ff8a80; --ok:#4cc38a;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 4px 16px rgba(0,0,0,.3);
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#121215; --panel:#1b1b20; --ink:#ededf0; --muted:#a0a0aa; --line:#2c2c33;
+  --accent:#ff6a4d; --accent-ink:#111; --err:#ff8a80; --ok:#4cc38a;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 4px 16px rgba(0,0,0,.3);
+}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  min-height:100vh;display:flex;align-items:center;justify-content:center;padding:16px}
+.box{width:100%;max-width:420px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:28px}
+h1{margin:0 0 16px;display:flex;justify-content:center}
+h1 img{display:block;max-width:100%;height:auto}
+.sub{color:var(--muted);font-size:13.5px;margin:0 0 20px}
+label{display:block;font-size:13px;color:var(--muted);margin:12px 0 5px}
+input{width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--ink);font:inherit}
+input:focus{outline:2px solid var(--accent);outline-offset:0;border-color:transparent}
+button{width:100%;margin-top:20px;padding:10px;border:0;border-radius:10px;background:var(--accent);color:var(--accent-ink);
+  font:inherit;font-weight:600;cursor:pointer}
+button:disabled{opacity:.6;cursor:default}
+.msg{min-height:20px;margin-top:12px;font-size:13.5px;color:var(--err)}
+.msg.success{color:var(--ok)}
+.back{display:block;margin-top:14px;text-align:center;color:var(--muted);font-size:13.5px}
+</style>
+</head>
+<body>
+<main class="box">
+<h1><img src="./logo.png" alt="Cenflix" height="61"></h1>
+<div class="card">
+  <p class="sub">Utwórz konto, aby się zalogować.</p>
+  <form id="form">
+    <label for="display-name">Display name</label>
+    <input id="display-name" name="display-name" type="text" autocomplete="name" maxlength="100" required>
+    <label for="email">E-mail</label>
+    <input id="email" name="email" type="email" autocomplete="email" autocapitalize="none" spellcheck="false" required>
+    <label for="phone">Telefon (opcjonalnie)</label>
+    <input id="phone" name="phone" type="tel" autocomplete="tel" maxlength="32">
+    <label for="password">Hasło</label>
+    <input id="password" name="password" type="password" autocomplete="new-password" minlength="6" required>
+    <label for="confirm-password">Potwierdź hasło</label>
+    <input id="confirm-password" name="confirm-password" type="password" autocomplete="new-password" minlength="6" required>
+    <button id="btn" type="submit" disabled>Utwórz konto</button>
+    <div class="msg" id="msg" role="status" aria-live="polite"></div>
+  </form>
+  <a class="back" href="./login.html">Masz już konto? Zaloguj się</a>
+  <a class="back" href="./">← Wróć do strony głównej</a>
+</div>
+</main>
+
+<script>
+try { const t = localStorage.getItem("motyw"); if (t) document.documentElement.dataset.theme = t; } catch(e) {}
+const SUPABASE = /*__SUPABASE__*/null;
+</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+(function(){
+"use strict";
+const $ = s => document.querySelector(s);
+const form = $("#form"), msg = $("#msg"), btn = $("#btn");
+
+if (location.protocol === "file:") {
+  msg.textContent = "Rejestracja działa po opublikowaniu strony, nie z pliku otwartego z dysku.";
+  return;
+}
+if (!SUPABASE) { msg.textContent = "Rejestracja nie jest jeszcze skonfigurowana."; return; }
+if (!window.supabase) { msg.textContent = "Nie udało się wczytać modułu rejestracji. Odśwież stronę."; return; }
+
+const sb = window.supabase.createClient(SUPABASE.url, SUPABASE.klucz, {
+  auth: { persistSession: false }
+});
+
+async function przygotujFormularz() {
+  const { data, error } = await sb.auth.getSession();
+  if (error) throw error;
+  if (data.session) { location.replace("./"); return; }
+
+  const response = await fetch(SUPABASE.url + "/auth/v1/settings", {
+    headers: {
+      apikey: SUPABASE.klucz,
+      Authorization: "Bearer " + SUPABASE.klucz
+    }
+  });
+  if (!response.ok) throw new Error("Nie udało się sprawdzić ustawień Supabase.");
+  const settings = await response.json();
+  if (settings.disable_signup) {
+    msg.textContent = "Rejestracja jest wyłączona w ustawieniach Supabase.";
+    return;
+  }
+  if (!settings.external || !settings.external.email) {
+    msg.textContent = "Dostawca Email jest wyłączony w ustawieniach Supabase.";
+    return;
+  }
+  if (!settings.mailer_autoconfirm) {
+    msg.textContent = "Potwierdzanie e-maila jest włączone. Wyłącz Confirm email w ustawieniach Supabase.";
+    return;
+  }
+  btn.disabled = false;
+}
+
+przygotujFormularz().catch(error => {
+  msg.textContent = "Nie udało się sprawdzić konfiguracji Supabase: " + error.message;
+});
+
+form.onsubmit = async (e) => {
+  e.preventDefault();
+  const displayName = $("#display-name").value.trim();
+  const email = $("#email").value.trim();
+  const phone = $("#phone").value.trim();
+  const password = $("#password").value;
+  const confirmation = $("#confirm-password").value;
+
+  if (!displayName) { msg.textContent = "Podaj display name."; return; }
+  if (password.length < 6) { msg.textContent = "Hasło musi mieć co najmniej 6 znaków."; return; }
+  if (password !== confirmation) { msg.textContent = "Hasła nie są identyczne."; return; }
+
+  msg.className = "msg";
+  msg.textContent = "";
+  btn.disabled = true;
+  btn.textContent = "Tworzenie konta…";
+  try {
+    const { data, error } = await sb.auth.signUp({
+      email,
+      password,
+      options: { data: { display_name: displayName, ...(phone ? { phone } : {}) } }
+    });
+    if (error) throw error;
+    if (!data.user || (data.user.identities && data.user.identities.length === 0)) {
+      msg.textContent = "Nie udało się utworzyć konta. Jeśli masz już konto, zaloguj się.";
+      btn.disabled = false;
+      btn.textContent = "Utwórz konto";
+      return;
+    }
+    if (!data.session) {
+      msg.textContent = "Supabase nie utworzył sesji. Sprawdź, czy Confirm email jest wyłączone.";
+      btn.disabled = false;
+      btn.textContent = "Utwórz konto";
+      return;
+    }
+    location.replace("./login.html?registered=1");
+  } catch (error) {
+    const reason = error.message || String(error);
+    const lowered = reason.toLowerCase();
+    msg.textContent = lowered.includes("signups not allowed") || lowered.includes("signup is disabled")
+      ? "Rejestracja jest wyłączona w ustawieniach Supabase. Włącz Allow new users to sign up."
+      : "Nie udało się utworzyć konta: " + reason;
+    btn.disabled = false;
+    btn.textContent = "Utwórz konto";
+  }
+};
+})();
+</script>
+</body>
+</html>

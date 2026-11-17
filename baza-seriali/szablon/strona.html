@@ -56,6 +56,7 @@ select{padding:8px 10px;border:1px solid var(--line);border-radius:10px;backgrou
 .konto b{color:var(--ink)}
 .konto a,.konto button{font:inherit;font-size:13.5px;border-radius:10px;padding:7px 12px;cursor:pointer;text-decoration:none}
 .konto a{background:var(--accent);color:var(--accent-ink);border:1px solid var(--accent);font-weight:600}
+.konto a.secondary{background:none;color:var(--ink);border-color:var(--line);font-weight:500}
 .konto button{background:none;border:1px solid var(--line);color:var(--ink)}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(178px,1fr));gap:14px;padding:16px 0}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow:hidden;cursor:pointer;display:flex;flex-direction:column;box-shadow:var(--shadow);text-align:left;padding:0}
@@ -457,7 +458,10 @@ function pokaz(sb, user){
   } else {
     const a = document.createElement("a");
     a.href = "login.html"; a.textContent = "Zaloguj się";
-    box.append(a);
+    const rejestracja = document.createElement("a");
+    rejestracja.href = "rejestracja.html"; rejestracja.textContent = "Utwórz konto";
+    rejestracja.className = "secondary";
+    box.append(a, rejestracja);
   }
   box.hidden = false;
 }

@@ -70,34 +70,33 @@ python skrypty/generuj_strone.py
 ## Strona na GitHub Pages i logowanie
 
 Każde uruchomienie workflow publikuje stronę pod adresem **https://cenflix.github.io/Projekt-Cenflix/**:
-`seriale.html` jako `index.html` oraz `login.html` (strona logowania). Pliki w Releases zostają bez zmian.
+`seriale.html` jako `index.html`, `login.html` (strona logowania) oraz `rejestracja.html`.
+Zmiany szablonu i formularzy uruchamiają publikację strony bez aktualizacji katalogu ani zużycia limitu API.
+Pliki w Releases zostają bez zmian.
 
 **Jednorazowo:** Settings → Pages → Build and deployment → Source: **GitHub Actions**,
 potem Actions → Aktualizacja bazy seriali → Run workflow (tryb `tylko_strona`).
 
-Logowanie obsługuje [Supabase](https://supabase.com) (darmowy plan). Dopóki `supabase` w `config.json`
-jest puste, przycisk „Zaloguj się” jest ukryty. W pliku pobranym z Releases i otwartym z dysku jest ukryty zawsze.
+Logowanie i rejestracja obsługuje [Supabase](https://supabase.com) (darmowy plan). Dopóki `supabase` w
+`config.json` jest puste, odnośniki do kont są ukryte. Display name i opcjonalny telefon trafiają do metadanych
+użytkownika; telefon nie jest weryfikowany, a potwierdzenie hasła służy wyłącznie walidacji formularza.
+W pliku pobranym z Releases i otwartym z dysku funkcje konta są ukryte.
 
 ### Konfiguracja Supabase (jednorazowo)
 
 1. Załóż konto i nowy projekt na supabase.com (region np. Frankfurt).
-2. **Authentication → Sign In / Providers**: wyłącz **Allow new users to sign up** (rejestracji na razie nie ma).
-3. **Authentication → Users → Add user → Create new user**: e-mail i hasło konta testowego,
-   zaznacz **Auto Confirm User**.
-4. **SQL Editor** – nadaj kontu wyświetlaną nazwę (podmień e-mail):
-   ```sql
-   update auth.users
-   set raw_user_meta_data = coalesce(raw_user_meta_data, '{}'::jsonb) || '{"display_name": "Jan Flixer"}'
-   where email = 'jan.flixer@example.com';
-   ```
-5. **Authentication → URL Configuration → Site URL**: `https://cenflix.github.io/Projekt-Cenflix/`.
-6. **Project Settings → API** (lub **API Keys**): skopiuj **Project URL** i klucz publiczny
+2. W ustawieniach **Authentication** włącz dostawcę **Email** i **Allow new users to sign up**,
+   a następnie wyłącz **Confirm email**. Formularz blokuje wysłanie rejestracji, jeśli potwierdzanie
+   e-maila jest nadal włączone.
+3. **Authentication → URL Configuration → Site URL**: `https://cenflix.github.io/Projekt-Cenflix/`.
+   Dodaj ten adres także do dozwolonych przekierowań.
+4. **Project Settings → API** (lub **API Keys**): skopiuj **Project URL** i klucz publiczny
    (**publishable** albo **anon public** – NIE `service_role`/`secret`) i wpisz do `config.json`:
    ```json
    "supabase": {"url": "https://xxxx.supabase.co", "klucz": "sb_publishable_..."}
    ```
    Ten klucz jest z założenia publiczny i trafia do kodu strony. Klucza `service_role`/`secret` nigdy nie wpisuj.
-7. Uruchom workflow w trybie `tylko_strona`.
+5. Uruchom workflow w trybie `tylko_strona` (albo wypchnij zmianę szablonu, aby uruchomić publikację strony).
 
 ## Źródła danych i regulamin
 
