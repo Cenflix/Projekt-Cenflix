@@ -6,6 +6,7 @@ on:
     paths:
       - ".github/workflows/aktualizacja-seriali.yml"
       - "baza-seriali/config.json"
+      - "baza-seriali/plany.json"
       - "baza-seriali/skrypty/generuj_strone.py"
       - "baza-seriali/szablon/**"
   schedule:

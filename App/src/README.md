@@ -19,10 +19,11 @@ The API currently provides:
 - `GET /api/series?q=...&sort=popular|new&genre=...&platform=...&limit=...` —
   catalog search and filtering;
 - `GET /api/series/:id` — series metadata and platform availability;
-- `GET /api/plans` — verified plan data and source metadata;
+- `GET /api/plans` — subscription plan data and source metadata;
 - `GET /api/series/:id/compare?profile=binging|daily|weekly|custom&episodesPerWeek=...` —
   estimated cost and monthly billing cycles.
 
-The catalog CSV does not contain subscription prices. The app reads plan prices
-from `plans.json`, generated from `Plany_Streamingowe.xlsx`. The workbook does
-not include a verification date, so the UI marks this metadata as missing.
+The catalog CSV does not contain subscription prices. The app and generated
+GitHub Pages site read plan prices from `baza-seriali/plany.json`, transcribed
+from `Plany_Streamingowe.xlsx`. The workbook does not include a verification
+date, so the UI marks this metadata as missing.

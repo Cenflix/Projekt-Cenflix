@@ -8,8 +8,9 @@ const app = express();
 const port = Number(process.env.PORT) || 3000;
 const publicDir = path.join(__dirname, "public");
 const catalogPath = path.resolve(__dirname, "..", "..", "shows_pl.csv");
-const plansPath = path.join(__dirname, "plans.json");
-const plans = JSON.parse(fs.readFileSync(plansPath, "utf8"));
+const plansPath = path.resolve(__dirname, "..", "..", "baza-seriali", "plany.json");
+const planData = JSON.parse(fs.readFileSync(plansPath, "utf8"));
+const plans = planData.items;
 
 function parseCsv(text) {
   const rows = [];
@@ -214,8 +215,8 @@ function platformName(service) {
 app.get("/api/plans", (req, res) => {
   res.json({
     items: plans,
-    source: "Plany_Streamingowe.xlsx",
-    verificationDate: null,
+    source: planData.source,
+    verificationDate: planData.verificationDate,
   });
 });
 

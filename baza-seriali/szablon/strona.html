@@ -98,6 +98,18 @@ dialog::backdrop{background:rgba(0,0,0,.5)}
 .opt{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:8px}
 .opt .hd{display:flex;align-items:center;gap:8px;font-weight:650}
 .opt .hd a{margin-left:auto;font-weight:500;font-size:13px;color:var(--accent)}
+.watch-controls{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:10px 0}
+.watch-controls select,.watch-controls input{padding:8px 10px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
+.watch-controls input[hidden]{display:none}
+.cost-results{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px}
+.cost-result{display:flex;flex-direction:column;gap:6px;padding:12px;border:1px solid var(--line);border-radius:12px}
+.cost-result.best{border:2px solid var(--accent)}
+.cost-result .price{font-size:20px;font-weight:700}
+.cost-result .meta{font-size:12.5px}
+.cost-result .best-tag{color:var(--accent);font-size:11px;font-weight:700;text-transform:uppercase}
+.cost-result a{font-size:13px;color:var(--accent)}
+.cost-note{color:var(--muted);font-size:12px}
+.cost-hint{margin:0 0 6px;color:var(--muted);font-size:13px}
 .kv{display:grid;grid-template-columns:120px 1fr;gap:4px 10px;font-size:13.5px;margin-top:8px}
 .kv b{color:var(--muted);font-weight:500}
 .pl{font-weight:700}
@@ -160,6 +172,7 @@ footer p{margin:4px 0}
       <span class="chip" role="button" tabindex="0" aria-pressed="false" data-f="leaving">Wkrótce znika</span>
       <span class="count" id="count"></span>
     </div>
+    <p class="cost-hint">Kliknij kartę serialu, aby zobaczyć dostępność i szacowany koszt obejrzenia dla dostępnych planów Netflix, Max i Disney+.</p>
   </div>
 </section>
 <main class="wrap">
@@ -181,6 +194,7 @@ footer p{margin:4px 0}
 
 <script>
 const D = /*__DANE__*/null;
+const PLANY = /*__PLANY__*/null;
 (function(){
 "use strict";
 const $ = s => document.querySelector(s);
@@ -210,6 +224,7 @@ const JEZ = k => D.jez[k] || k;
 const regiony = (() => { try { return new Intl.DisplayNames(["pl"], {type:"region"}); } catch(e) { return null; } })();
 const kraj = c => { try { return regiony ? regiony.of(c) : c; } catch(e) { return c; } };
 const QN = {sd:"SD", hd:"HD", qhd:"QHD", uhd:"4K"};
+const cenyPlanow = PLANY?.items || [];
 // odmiana: 1 sezon, 2–4 sezony, 5+ sezonów (12–14 też „sezonów”)
 const odm = (n, a, b, c) => n === 1 ? a : (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14)) ? b : c;
 const WKRAJU = {pl:"W Polsce", de:"W Niemczech", us:"W USA", gb:"W Wielkiej Brytanii", fr:"We Francji"};
@@ -360,14 +375,99 @@ function otworz(id){
     <div class="facts">${facts.map(f => `<span>${esc(f)}</span>`).join("")}</div>
     ${s.o ? `<p class="ov">${esc(s.o)}</p>` : ""}
     ${ludzie.length ? `<p class="meta">${esc(ludzie.join(" · "))}</p>` : ""}
+    ${sekcjaKosztu(s)}
     <div class="sec"><h3>${esc(WKRAJU[D.meta.kraj] || "Kraj: " + kraj(D.meta.kraj.toUpperCase()))}</h3>${opcje || '<div class="meta">Obecnie niedostępny w wybranych serwisach.</div>'}</div>
     ${zap ? `<div class="sec"><h3>Zapowiedzi</h3>${zap}</div>` : ""}
     ${swiat}
     <div class="sec meta">${[s.imdb ? `<a href="https://www.imdb.com/title/${esc(s.imdb)}/" target="_blank" rel="noopener">IMDb ↗</a>` : "", s.tmdb ? `<a href="https://www.themoviedb.org/${esc(s.tmdb)}" target="_blank" rel="noopener">TMDB ↗</a>` : ""].filter(Boolean).join(" · ")}</div>
     </div></div>`;
   $("#dlg").querySelector(".close").onclick = () => $("#dlg").close();
+  const profil = $("#profil-ogladania");
+  if (profil) profil.onchange = () => {
+    $("#odcinkow-tygodniowo").hidden = profil.value !== "custom";
+    przeliczKoszt(s);
+  };
+  const odcinkiTygodniowo = $("#odcinkow-tygodniowo");
+  if (odcinkiTygodniowo) odcinkiTygodniowo.oninput = () => przeliczKoszt(s);
+  przeliczKoszt(s);
   $("#dlg").showModal();
   $("#dlg").scrollTop = 0;
+}
+
+function platformaCenowa(serviceId){
+  const name = svName(serviceId).toLowerCase();
+  if (name.includes("netflix")) return "Netflix";
+  if (name.includes("hbo max") || name === "max") return "Max";
+  if (name.includes("disney")) return "Disney+";
+  return null;
+}
+function sekcjaKosztu(s){
+  return `<div class="sec"><h3>Szacowany koszt obejrzenia</h3>
+    <div class="watch-controls">
+      <label for="profil-ogladania">Tempo:</label>
+      <select id="profil-ogladania">
+        <option value="binging">Binging — 4 odcinki dziennie</option>
+        <option value="daily">1 odcinek dziennie</option>
+        <option value="weekly">1 odcinek tygodniowo</option>
+        <option value="custom">Własne tempo</option>
+      </select>
+      <input id="odcinkow-tygodniowo" type="number" min="1" max="70" value="2" aria-label="Odcinki tygodniowo" hidden>
+    </div>
+    <div id="koszt-status" class="meta" aria-live="polite"></div>
+    <div id="koszt-wyniki" class="cost-results"></div>
+    <p class="cost-note">Ceny przepisano z Plany_Streamingowe.xlsx. Arkusz nie zawiera daty weryfikacji; wynik jest szacunkowy. Obejmuje tylko platformy z cenami w tym zestawieniu.</p>
+  </div>`;
+}
+function przeliczKoszt(s){
+  const status = $("#koszt-status"), results = $("#koszt-wyniki");
+  if (!status || !results) return;
+  const profile = $("#profil-ogladania").value;
+  const count = Number($("#odcinkow-tygodniowo").value);
+  if (!s.ep) {
+    status.textContent = "Brak liczby odcinków — nie można oszacować kosztu.";
+    results.innerHTML = "";
+    return;
+  }
+  if (profile === "custom" && (!Number.isFinite(count) || count < 1 || count > 70)) {
+    status.textContent = "Podaj od 1 do 70 odcinków tygodniowo.";
+    results.innerHTML = "";
+    return;
+  }
+  const odcinkowDziennie = profile === "binging" ? 4 : profile === "daily" ? 1 :
+    profile === "weekly" ? 1 / 7 : count / 7;
+  const dni = Math.ceil(s.ep / odcinkowDziennie);
+  const miesiace = Math.max(1, Math.ceil(dni / 30));
+  const platformy = new Set(s.d.map(d => platformaCenowa(d.s)).filter(Boolean));
+  const oferty = cenyPlanow.filter(p => platformy.has(p.platform)).map(p => {
+    let billing = "monthly", cycles = miesiace, total = miesiace * p.monthly;
+    if (p.yearly) {
+      const lata = Math.max(1, Math.ceil(dni / 365));
+      const kosztRoczny = lata * p.yearly;
+      if (kosztRoczny < total) {
+        billing = "yearly";
+        cycles = lata;
+        total = kosztRoczny;
+      }
+    }
+    const dostepnosc = s.d.find(d => platformaCenowa(d.s) === p.platform);
+    return {...p, billing, cycles, total, url:dostepnosc && dostepnosc.l};
+  }).sort((a,b) => a.total - b.total);
+  status.textContent = `${s.ep} odc. · ${profile === "custom" ? `${count} odc. tygodniowo` :
+    profile === "weekly" ? "1 odc. tygodniowo" : profile === "daily" ? "1 odc. dziennie" : "4 odc. dziennie"} · około ${dni} dni`;
+  if (!oferty.length) {
+    results.innerHTML = '<div class="meta">Brak cen dla platform, na których ten serial jest dostępny.</div>';
+    return;
+  }
+  const pln = new Intl.NumberFormat("pl-PL", {style:"currency", currency:"PLN"});
+  results.innerHTML = oferty.map((p,i) => `<article class="cost-result ${i === 0 ? "best" : ""}">
+    ${i === 0 ? '<span class="best-tag">Najtańsza opcja</span>' : ""}
+    <strong>${esc(p.platform)} · ${esc(p.plan)}</strong>
+    <span class="meta">${esc(p.quality)} · ${p.ads ? "z reklamami" : "bez reklam"} · ${p.screens} ${p.screens === 1 ? "ekran" : "ekrany"}</span>
+    <span class="price">${pln.format(p.total)}</span>
+    <span class="meta">${p.billing === "yearly" ? `${p.cycles} ${odm(p.cycles, "cykl roczny", "cykle roczne", "cykli rocznych")}` :
+      `${p.cycles} ${odm(p.cycles, "miesiąc", "miesiące", "miesięcy")}`}</span>
+    ${p.url ? `<a href="${esc(p.url)}" target="_blank" rel="noopener">Otwórz w serwisie ↗</a>` : ""}
+  </article>`).join("");
 }
 $("#dlg").addEventListener("click", e => { if (e.target === $("#dlg")) $("#dlg").close(); });
 

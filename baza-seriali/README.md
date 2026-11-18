@@ -54,6 +54,13 @@ Zużycie widać w podsumowaniu każdego uruchomienia (zakładka Actions). TMDB n
 - `limit_zapytan_miesiecznie` – twardy limit zapytań.
 - `pelne_odswiezenie_co_dni` – jak często robić pełne pobranie.
 
+## Ceny planów w porównywarce
+
+Ceny używane przez kalkulator na stronie GitHub Pages znajdują się w `plany.json`.
+Plik został przepisany z `Plany_Streamingowe.xlsx`; arkusz nie zawiera daty
+weryfikacji, więc strona pokazuje tę informację jako brakującą. Zmiana `plany.json`
+uruchamia workflow, który generuje i publikuje stronę bez pobierania danych katalogowych.
+
 ## Zmiana nazwy folderu
 
 Jeśli zmienisz nazwę folderu `baza-seriali`, zmień też `FOLDER:` na górze pliku `.github/workflows/aktualizacja-seriali.yml`.

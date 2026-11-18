@@ -10,6 +10,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from wspolne import KATALOG, log, otworz_baze, stan_get, teraz, wczytaj_konfiguracje  # noqa: E402
 
 SZABLON = os.path.join(KATALOG, "szablon", "strona.html")
+PLANY = os.path.join(KATALOG, "plany.json")
 WYJSCIE = os.environ.get("SERIALE_HTML", os.path.join(KATALOG, "seriale.html"))
 SZABLON_LOGOWANIA = os.path.join(KATALOG, "szablon", "login.html")
 WYJSCIE_LOGOWANIA = os.path.join(os.path.dirname(os.path.abspath(WYJSCIE)), "login.html")
@@ -125,11 +126,18 @@ def main():
     }
     with open(SZABLON, encoding="utf-8") as f:
         szablon = f.read()
+    with open(PLANY, encoding="utf-8") as f:
+        plany = json.load(f)
     znacznik = "/*__DANE__*/null"
     if znacznik not in szablon:
         sys.exit("W szablonie brakuje znacznika /*__DANE__*/null")
     json_txt = json.dumps(dane, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
-    html = wstaw_supabase(szablon.replace(znacznik, json_txt, 1), cfg)
+    znacznik_planow = "/*__PLANY__*/null"
+    if znacznik_planow not in szablon:
+        sys.exit("W szablonie brakuje znacznika /*__PLANY__*/null")
+    plany_txt = json.dumps(plany, ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
+    html = szablon.replace(znacznik, json_txt, 1).replace(znacznik_planow, plany_txt, 1)
+    html = wstaw_supabase(html, cfg)
     with open(WYJSCIE, "w", encoding="utf-8") as f:
         f.write(html)
     log(f"Zapisano {WYJSCIE}: {len(seriale)} seriali, {len(historia)} wpisów historii, "
