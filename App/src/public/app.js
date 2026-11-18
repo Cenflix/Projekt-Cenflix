@@ -170,6 +170,7 @@ async function showSeries(id) {
   selectedSeries.hidden = false;
   selectedSeries.innerHTML = '<p class="catalog-status">Wczytuję informacje o serialu…</p>';
   selectedSeries.scrollIntoView({ behavior: "smooth", block: "start" });
+  selectedSeries.dataset.seriesId = id;
 
   try {
     const response = await fetch(`/api/series/${encodeURIComponent(id)}`);
@@ -202,10 +203,69 @@ async function showSeries(id) {
         </div>
         <button class="detail-close" type="button" data-close-detail>Zamknij</button>
       </div>
+      <section class="watch-controls" aria-label="Ustawienia oglądania">
+        <label>Tempo oglądania
+          <select id="watch-profile">
+            <option value="binging">Binging — 4 odcinki dziennie</option>
+            <option value="daily">Daily — 1 odcinek dziennie</option>
+            <option value="weekly">Weekly — 1 odcinek tygodniowo</option>
+            <option value="custom">Własny — odcinki tygodniowo</option>
+          </select>
+          <input id="episodes-per-week" type="number" min="1" max="70" value="2" aria-label="Liczba odcinków tygodniowo" hidden>
+        </label>
+      </section>
+      <div id="comparison-status" class="detail-note"></div>
+      <div id="plan-comparison" class="plan-comparison"></div>
       <div class="availability-list">${availabilities || '<p>Brak potwierdzonych informacji o dostępności.</p>'}</div>
-      <p class="detail-note">Brak danych nie oznacza potwierdzonego braku. Ceny planów nie są jeszcze częścią katalogu.</p>`;
+      <p class="detail-note">Brak danych nie oznacza potwierdzonego braku. Dane cenowe pochodzą z Plany_Streamingowe.xlsx; data weryfikacji nie została podana w arkuszu.</p>`;
+    await loadComparison(id);
   } catch (error) {
     selectedSeries.innerHTML = `<p role="alert">${escapeHtml(error.message || "Nie udało się wczytać serialu.")}</p>`;
+  }
+}
+
+async function loadComparison(id) {
+  const status = document.querySelector("#comparison-status");
+  const container = document.querySelector("#plan-comparison");
+  const profile = document.querySelector("#watch-profile")?.value || "binging";
+  const episodesPerWeek = document.querySelector("#episodes-per-week")?.value;
+  if (!status || !container) return;
+  status.textContent = "Wyliczam koszt oglądania…";
+
+  try {
+    const params = new URLSearchParams({ profile });
+    if (profile === "custom") params.set("episodesPerWeek", episodesPerWeek || "1");
+    const response = await fetch(`/api/series/${encodeURIComponent(id)}/compare?${params}`);
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      throw new Error(body.error || `Nie udało się wyliczyć kosztu (${response.status}).`);
+    }
+    const comparison = await response.json();
+    status.textContent = `${comparison.episodes} odc. · ${comparison.scheduleUnit} · około ${comparison.watchingDays} dni oglądania`;
+
+    if (!comparison.items.length) {
+      container.innerHTML = '<div class="empty-state">Brak planów cenowych dla platform z potwierdzoną dostępnością.</div>';
+      return;
+    }
+
+    container.innerHTML = comparison.items.map((item, index) => `
+      <article class="plan-result ${index === 0 ? "is-best" : ""}">
+        ${index === 0 ? '<span class="best-label">Najtańsza opcja</span>' : ""}
+        <div class="plan-result-main">
+          <strong>${escapeHtml(item.platform)} · ${escapeHtml(item.plan)}</strong>
+          <span>${escapeHtml(item.quality)} · ${item.ads ? "z reklamami" : "bez reklam"} · ${item.screens} ${item.screens === 1 ? "ekran" : "ekrany"}</span>
+        </div>
+        <div class="plan-cost">
+          <strong>${item.total.toLocaleString("pl-PL", { style: "currency", currency: "PLN" })}</strong>
+          <span>${item.billing === "yearly"
+            ? `${item.cycles} ${item.cycles === 1 ? "cykl roczny" : "cykle roczne"}`
+            : `${item.cycles} ${item.cycles === 1 ? "miesiąc" : "miesiące"}`}</span>
+        </div>
+        ${item.url ? `<a href="${escapeHtml(item.url)}" target="_blank" rel="noopener noreferrer">Przejdź do platformy ↗</a>` : ""}
+      </article>`).join("");
+  } catch (error) {
+    status.textContent = "";
+    container.innerHTML = `<p role="alert">${escapeHtml(error.message || "Nie udało się wyliczyć kosztu.")}</p>`;
   }
 }
 
@@ -265,6 +325,17 @@ document.addEventListener("click", (event) => {
   }
 
   if (!event.target.closest(".search-wrap")) closeSuggestions();
+});
+
+document.addEventListener("change", (event) => {
+  if (event.target.id === "watch-profile" && selectedSeries.dataset.seriesId) {
+    const customInput = document.querySelector("#episodes-per-week");
+    if (customInput) customInput.hidden = event.target.value !== "custom";
+    loadComparison(selectedSeries.dataset.seriesId);
+  }
+  if (event.target.id === "episodes-per-week" && selectedSeries.dataset.seriesId) {
+    loadComparison(selectedSeries.dataset.seriesId);
+  }
 });
 
 document.querySelectorAll("[data-sort]").forEach((button) => {

@@ -8,6 +8,8 @@ const app = express();
 const port = Number(process.env.PORT) || 3000;
 const publicDir = path.join(__dirname, "public");
 const catalogPath = path.resolve(__dirname, "..", "..", "shows_pl.csv");
+const plansPath = path.join(__dirname, "plans.json");
+const plans = JSON.parse(fs.readFileSync(plansPath, "utf8"));
 
 function parseCsv(text) {
   const rows = [];
@@ -200,6 +202,109 @@ app.get("/api/series/:id", (req, res) => {
   const series = catalog.find((item) => item.id === req.params.id);
   if (!series) return res.status(404).json({ error: "Series not found." });
   res.json(series);
+});
+
+function platformName(service) {
+  if (/hbo/i.test(service) || /^max$/i.test(service)) return "Max";
+  if (/disney/i.test(service)) return "Disney+";
+  if (/netflix/i.test(service)) return "Netflix";
+  return null;
+}
+
+app.get("/api/plans", (req, res) => {
+  res.json({
+    items: plans,
+    source: "Plany_Streamingowe.xlsx",
+    verificationDate: null,
+  });
+});
+
+app.get("/api/series/:id/compare", (req, res) => {
+  const series = catalog.find((item) => item.id === req.params.id);
+  if (!series) return res.status(404).json({ error: "Series not found." });
+
+  const profile = typeof req.query.profile === "string" ? req.query.profile : "binging";
+  const episodes = series.episodes || 0;
+  let dailyEpisodes;
+  let scheduleUnit;
+
+  if (profile === "daily") {
+    dailyEpisodes = 1;
+    scheduleUnit = "odcinek dziennie";
+  } else if (profile === "weekly") {
+    dailyEpisodes = 1 / 7;
+    scheduleUnit = "1 odcinek tygodniowo";
+  } else if (profile === "custom") {
+    const count = Number(req.query.episodesPerWeek);
+    if (!Number.isFinite(count) || count < 1 || count > 70) {
+      return res.status(400).json({ error: "episodesPerWeek must be a number between 1 and 70." });
+    }
+    dailyEpisodes = count / 7;
+    scheduleUnit = `${count} odc. tygodniowo`;
+  } else if (profile === "binging") {
+    dailyEpisodes = 4;
+    scheduleUnit = "4 odcinki dziennie";
+  } else {
+    return res.status(400).json({ error: 'Profile must be "binging", "daily", "weekly", or "custom".' });
+  }
+
+  if (!episodes) {
+    return res.status(422).json({ error: "Episode count is missing for this series." });
+  }
+
+  const watchingDays = Math.ceil(episodes / dailyEpisodes);
+  const monthlyCycles = Math.max(1, Math.ceil(watchingDays / 30));
+  const availablePlatforms = new Set(
+    series.availabilities.map((availability) => platformName(availability.service)).filter(Boolean),
+  );
+
+  const items = plans
+    .filter((plan) => availablePlatforms.has(plan.platform))
+    .map((plan) => {
+      let billing = "monthly";
+      let total = monthlyCycles * plan.monthly;
+      let cycles = monthlyCycles;
+
+      if (plan.yearly && watchingDays >= 300) {
+        const yearlyCycles = Math.max(1, Math.ceil(watchingDays / 365));
+        if (yearlyCycles * plan.yearly < total) {
+          billing = "yearly";
+          total = yearlyCycles * plan.yearly;
+          cycles = yearlyCycles;
+        }
+      }
+
+      const availability = series.availabilities.find(
+        (item) => platformName(item.service) === plan.platform,
+      );
+      return {
+        platform: plan.platform,
+        plan: plan.plan,
+        monthly: plan.monthly,
+        yearly: plan.yearly,
+        quality: plan.quality,
+        ads: plan.ads,
+        screens: plan.screens,
+        billing,
+        cycles,
+        total: Number(total.toFixed(2)),
+        url: availability?.url || null,
+      };
+    })
+    .sort((left, right) => left.total - right.total);
+
+  res.json({
+    series: {
+      id: series.id,
+      title: series.title,
+      episodes,
+      seasons: series.seasons,
+    },
+    profile,
+    scheduleUnit,
+    watchingDays,
+    items,
+  });
 });
 
 app.use(express.static(publicDir));
